@@ -1,6 +1,6 @@
 # Cryptozombies
 
-Recording what I learned from Cryptozombies course (my first Solidity project), and [here](https://share.cryptozombies.io/ko/lesson/1/share/estellechoi) is my zombie created!
+Recording what I learned from CryptoZombies course, and [here](https://share.cryptozombies.io/ko/lesson/1/share/Estelle_Choi?id=Y3p8MTc1NTA2) is my zombie created!
 
 <br />
 
