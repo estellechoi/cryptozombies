@@ -1,6 +1,6 @@
 # Cryptozombies
 
-Recording what I learned from CryptoZombies course, and [here](https://share.cryptozombies.io/ko/lesson/1/share/Estelle_Choi?id=Y3p8MTc1NTA2) is my zombie created!
+Recording what I learned from CryptoZombies course, and [here](https://share.cryptozombies.io/ko/lesson/1/share/Estelle_Choi?id=Y3p8MTc1NTA2) is my zombie created and [you can feed zombies CryptoKitties](https://share.cryptozombies.io/ko/lesson/2/share/Estelle_Choi?id=Y3p8MTc1NTA2).
 
 <br />
 
