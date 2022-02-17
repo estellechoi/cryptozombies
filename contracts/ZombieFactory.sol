@@ -1,17 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11; // use the specified solc version
 
-contract ZombieFactory {
+import "./ownable.sol";
+
+// ZombieFactory extends Ownable to use onlyOwner modifier
+contract ZombieFactory is Ownable {
     // event declaration
     event NewZombie(uint256 zombieId, string name, uint256 dna);
 
     uint256 dnaDigits = 16; // uint = uint256
     uint256 dnaModulus = 10**dnaDigits;
+    uint256 cooldownTime = 1 days; // 24 * 60 * 60 s
 
     // structure is something like interface
     struct Zombie {
         string name;
         uint256 dna;
+        // can save gas fee by using uint32 rather than uint256 in a struct
+        // it is also helpful to declare same-typed ones continuously
+        // but uint32 doesnt save gas fee if used outside of structs!
+        uint32 level;
+        uint32 readyTime;
     }
 
     // a dynamic array without fixed length
@@ -25,7 +34,10 @@ contract ZombieFactory {
     // private functions use _ prefix for its name and parameters "usually"
     // internal is private, but accessible from the contracts extending the current one.
     function _createZombie(string memory _name, uint256 _dna) internal {
-        zombies.push(Zombie(_name, _dna));
+        zombies.push(
+            // block.timestamp returns uint256
+            Zombie(_name, _dna, 1, uint32(block.timestamp + cooldownTime))
+        );
         uint256 id = zombies.length - 1;
 
         zombieToOwner[id] = msg.sender; // save the address of caller

@@ -26,19 +26,38 @@ abstract contract KittyInterface {
 // ZombieFeeding extends ZombieFactory
 contract ZombieFeeding is ZombieFactory {
     // initialize the interface
-    address ckAddress = 0x06012c8cf97BEaD5deAe237070F9587f8E7A266d;
-    KittyInterface kittyContract = KittyInterface(ckAddress);
+    // address ckAddress = 0x06012c8cf97BEaD5deAe237070F9587f8E7A266d;
+    // = KittyInterface(ckAddress);
+    KittyInterface kittyContract;
+
+    // can use onlyOwner modifier of Ownable as it is extended by ZombieFactory extended by ZombieFeeding
+    function setKittyContractAddress(address _address) external onlyOwner {
+        kittyContract = KittyInterface(_address);
+    }
+
+    // 1. `_triggerCooldown` 함수를 여기에 정의하게
+    function _triggerCooldown(Zombie storage _zombie) internal {
+        _zombie.readyTime = uint32(block.timestamp + cooldownTime);
+    }
+
+    // 2. `_isReady` 함수를 여기에 정의하게
+    function _isReady(Zombie storage _zombie) internal view returns (bool) {
+        return (_zombie.readyTime <= block.timestamp);
+    }
 
     function feedAndMultiply(
         uint256 _zombieId,
         uint256 _targetDna,
         string memory _species
-    ) public {
+    ) internal {
         // check if the caller's address is same as the one of zombie owner
         require(zombieToOwner[_zombieId] == msg.sender);
 
         // storage → pointer
         Zombie storage myZombie = zombies[_zombieId];
+
+        // check if the readyTime passed so that feed zombie
+        require(_isReady(myZombie));
 
         _targetDna = _targetDna % dnaModulus;
         uint256 newDna = (myZombie.dna + _targetDna) / 2;
@@ -49,6 +68,7 @@ contract ZombieFeeding is ZombieFactory {
         }
 
         _createZombie("NoName", newDna); // this is callable cuz it is declared as "internal"
+        _triggerCooldown(myZombie); // set readyTime for the zombie feeded!
     }
 
     function feedOnKitty(uint256 _zombieId, uint256 _kittyId) public {
