@@ -67,6 +67,41 @@ now : 현재의 유닉스 타임스탬프(1970년 1월 1일부터 지금까지�
 
 ## 6. Modifier
 
+### 6-1. Visibility Modifier
+
+- private
+- internal
+- public
+- external
+
+<br />
+
+### 6-2. State Modifier
+
+다음 두 Modifier 모두, 컨트랙트 외부에서 불렸을 때 가스를 전혀 소모하지 않네(하지만 다른 함수에 의해 내부적으로 호출됐을 경우에는 가스를 소모하지)
+
+- view : 해당 함수를 실행해도 어떤 데이터도 저장/변경되지 않음을 알려주지
+- pure : 해당 함수가 어떤 데이터도 블록체인에 저장하지 않을 뿐만 아니라, 블록체인으로부터 어떤 데이터도 읽지 않음을 알려주지.
+
+<br />
+
+### 6-3. Custom Modifier
+
+```solidity
+  /**
+   * @dev Throws if called by any account other than the owner.
+   */
+  modifier onlyOwner() {
+    require(msg.sender == owner);
+    _;
+  }
+```
+
+<br />
+
+### 6-4. `payable` Modifier
+
 
 
 <br />
+
