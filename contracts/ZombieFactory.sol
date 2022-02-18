@@ -21,6 +21,8 @@ contract ZombieFactory is Ownable {
         // but uint32 doesnt save gas fee if used outside of structs!
         uint32 level;
         uint32 readyTime;
+        uint16 winCount;
+        uint16 lossCount;
     }
 
     // a dynamic array without fixed length
@@ -36,7 +38,7 @@ contract ZombieFactory is Ownable {
     function _createZombie(string memory _name, uint256 _dna) internal {
         zombies.push(
             // block.timestamp returns uint256
-            Zombie(_name, _dna, 1, uint32(block.timestamp + cooldownTime))
+            Zombie(_name, _dna, 1, uint32(block.timestamp + cooldownTime), 0, 0)
         );
         uint256 id = zombies.length - 1;
 
