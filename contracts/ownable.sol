@@ -4,7 +4,7 @@
  * functions, this simplifies the implementation of "user permissions".
  */
 contract Ownable {
-    address public owner;
+    address payable public owner;
 
     event OwnershipTransferred(
         address indexed previousOwner,
@@ -16,7 +16,7 @@ contract Ownable {
      * account.
      */
     constructor() public {
-        owner = msg.sender;
+        owner = payable(msg.sender);
     }
 
     /**
@@ -34,6 +34,6 @@ contract Ownable {
     function transferOwnership(address newOwner) public onlyOwner {
         require(newOwner != address(0));
         emit OwnershipTransferred(owner, newOwner);
-        owner = newOwner;
+        owner = payable(newOwner);
     }
 }
