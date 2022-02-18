@@ -2,13 +2,22 @@
 
 Recording what I learned from CryptoZombies course!
 
-Lesson1 : [here](https://share.cryptozombies.io/ko/lesson/1/share/Estelle_Choi?id=Y3p8MTc1NTA2) is my first zombie created
+<br />
 
-Lesson2 : [you can feed zombies CryptoKitties](https://share.cryptozombies.io/ko/lesson/2/share/Estelle_Choi?id=Y3p8MTc1NTA2)
+### What I learned from the course
 
-Lesson3 : [Check out my zombies](https://share.cryptozombies.io/ko/lesson/3/share/Estelle_Choi?id=Y3p8MTc1NTA2)
+#### Docs
 
-Lesson4 : [Try a battle with my zombies](https://share.cryptozombies.io/ko/lesson/4/share/Kitty_Zombie?id=WyJjenwxNzU1MDYiLDIsMTRd)
+- [Contract & Solidity](./docs/contract.md)
+
+<br />
+
+#### Some results
+
+- as a result of the lesson1, here is [my first zombie created](https://share.cryptozombies.io/ko/lesson/1/share/Estelle_Choi?id=Y3p8MTc1NTA2)
+- lesson2, you can [feed my zombies, who like to eat CryptoKitties](https://share.cryptozombies.io/ko/lesson/2/share/Estelle_Choi?id=Y3p8MTc1NTA2)
+- lesson3, check out [my zombies](https://share.cryptozombies.io/ko/lesson/3/share/Estelle_Choi?id=Y3p8MTc1NTA2)
+- lesson4, try [a battle with my zombies](https://share.cryptozombies.io/ko/lesson/4/share/Kitty_Zombie?id=WyJjenwxNzU1MDYiLDIsMTRd)
 
 <br />
 
