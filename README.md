@@ -5,6 +5,7 @@ Recording what I learned from CryptoZombies course!
 Lesson1 : [here](https://share.cryptozombies.io/ko/lesson/1/share/Estelle_Choi?id=Y3p8MTc1NTA2) is my first zombie created
 Lesson2 : [you can feed zombies CryptoKitties](https://share.cryptozombies.io/ko/lesson/2/share/Estelle_Choi?id=Y3p8MTc1NTA2)
 Lesson3 : [Check out my zombies](https://share.cryptozombies.io/ko/lesson/3/share/Estelle_Choi?id=Y3p8MTc1NTA2)
+Lesson4 : [Try a battle with my zombies](https://share.cryptozombies.io/ko/lesson/4/share/Kitty_Zombie?id=WyJjenwxNzU1MDYiLDIsMTRd)
 
 <br />
 
