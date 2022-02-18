@@ -1,4 +1,4 @@
-# Cryptozombies
+# CryptoZombies
 
 Recording what I learned from CryptoZombies course!
 
