@@ -5,7 +5,7 @@
 <br />
 
 1. Contract, Immutability & Composability
-2. Ownable
+2. Access Control: `Ownable`
 3. Gas
 4. Storage is expensive
 5. Uint
@@ -44,12 +44,26 @@ Contract의 또다른 특징은 [Composability](https://ethereum.org/en/develope
 
 <br />
 
-<br />
+## 2. Access Control: `Ownable`
 
-## 2. Ownable
+Contract를 개발할 때 중요한 포인트 중 하나는 Access Control 입니다. 데이터나 함수에 적절한 Access Control을 두지 않으면 누구나 Contract를 악용할 수 있기 때문입니다. [Open Zeppelin](https://openzeppelin.com/)은 검증된 Solidity 라이브러리들을 다수 제공하는데, 그 중 [`Ownable`](https://docs.openzeppelin.com/contracts/2.x/access-control#ownership-and-ownable)이라는 Contract는 Contract를 처음 배포하는 주소를 `owner`로 지정한 후 이 `owner`만이 특정 함수와 데이터에 접근하도록 제한할 수 있게 해줍니다. 다음과 같이 Import한 후 상속하면 됩니다! `Ownable` Contract의 `onlyOwner` Modifier를 사용하면 해당 함수는 `owner`만 호출할 수 있게 됩니다.
 
-[Open Zeppelin](https://openzeppelin.com/)
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.11;
 
+import "@openzeppelin/contracts/ownership/Ownable.sol";
+
+contract MyContract is Ownable {
+    function normalThing() public {
+        // anyone can call this normalThing()
+    }
+
+    function specialThing() public onlyOwner {
+        // only the owner can call specialThing()!
+    }
+}
+```
 
 <br />
 
