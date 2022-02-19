@@ -6,11 +6,12 @@
 
 1. Contract, Immutability & Composability
 2. Access Control: `Ownable`
-3. Gas
-4. Storage is expensive
-5. Uint
-6. Time units
-7. Modifier
+3. Account
+4. Gas
+5. Storage is expensive
+6. Uint
+7. Time units
+8. Modifier
 
 <br />
 
@@ -18,7 +19,7 @@
 
 ### 1-1. Contract
 
-(Smart) Contract는 간단히 말해서 Ethereum 블록체인에 배포된 프로그램입니다. 모든 Contract는 Ethereum 상에서 주소(Address)를 갖는데, 이는 Contract가 Ethereum 블록체인에 존재하는 계정의 한 종류이기 때문입니다. 이때문에 Contract는 (마치 블록체인상의 지갑 주소처럼) 보유하고있는 Ether Balance를 갖고, 블록체인 상에서 Transaction을 수행할 수 있는 것입니다.
+(Smart) Contract는 간단히 말해서 [Ethereum 블록체인](https://ethereum.org/en/developers/docs/intro-to-ethereum/)에 배포된 프로그램으로, [DApp](https://ethereum.org/en/developers/docs/dapps/)의 백엔드로 볼 수 있습니다. 모든 Contract는 Ethereum 상에서 주소(Address)를 갖는데, 이는 Contract가 Ethereum 블록체인에 존재하는 계정(Account)의 한 종류이기 때문입니다. 이때문에 Contract는 (마치 블록체인상의 지갑 주소처럼) 보유하고있는 [Ether](https://ethereum.org/en/developers/docs/intro-to-ether/) Balance를 갖고, 블록체인 상에서 Transaction을 수행할 수 있는 것입니다.
 
 > A "smart contract" is simply a program that runs on the Ethereum blockchain. It's a collection of code (its functions) and data (its state) that resides at a specific address on the Ethereum blockchain. Smart contracts are a type of Ethereum account. - [INTRODUCTION TO SMART CONTRACTS | Ethereum](https://ethereum.org/en/developers/docs/smart-contracts/)
 
@@ -46,7 +47,7 @@ Contract의 또다른 특징은 [Composability](https://ethereum.org/en/develope
 
 ## 2. Access Control: `Ownable`
 
-Contract를 개발할 때 중요한 포인트 중 하나는 Access Control 입니다. 데이터나 함수에 적절한 Access Control을 두지 않으면 누구나 Contract를 악용할 수 있기 때문입니다. [Open Zeppelin](https://openzeppelin.com/)은 검증된 Solidity 라이브러리들을 다수 제공하는데, 그 중 [`Ownable`](https://docs.openzeppelin.com/contracts/2.x/access-control#ownership-and-ownable)이라는 Contract는 Contract를 처음 배포하는 주소를 `owner`로 지정한 후 이 `owner`만이 특정 함수와 데이터에 접근하도록 제한할 수 있게 해줍니다. 다음과 같이 Import한 후 상속하면 됩니다! `Ownable` Contract의 `onlyOwner` Modifier를 사용하면 해당 함수는 `owner`만 호출할 수 있게 됩니다.
+Contract를 개발할 때 중요한 포인트 중 하나는 Access Control 입니다. 데이터나 함수에 적절한 Access Control을 두지 않으면 누구나 Contract를 악용할 수 있기 때문입니다. [Open Zeppelin](https://openzeppelin.com/)은 검증된 Solidity 라이브러리들을 다수 제공하는데, 그 중 [`Ownable`](https://docs.openzeppelin.com/contracts/2.x/access-control#ownership-and-ownable)이라는 Contract는 Contract를 처음 배포하는 주소를 `owner`로 지정한 후 이 `owner`만이 특정 함수와 데이터에 접근하도록 제한할 수 있게 해줍니다. 다음과 같이 Import한 후 상속하면 됩니다! `Ownable` Contract의 `onlyOwner` Modifier를 사용하면 해당 함수는 `owner`만 호출할 수 있게 됩니다. `Ownable` 코드는 [여기](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol)에서 볼 수 있습니다.
 
 ```solidity
 // SPDX-License-Identifier: MIT
@@ -67,9 +68,34 @@ contract MyContract is Ownable {
 
 <br />
 
-## 3. Gas
+## 3. Account
 
-> 함수를 실행하는 데에 얼마나 많은 가스가 필요한지는 그 함수의 로직(논리 구조)이 얼마나 복잡한지에 따라 달라지네. 각각의 연산은 소모되는 가스 비용(gas cost)이 있고, 그 연산을 수행하는 데에 소모되는 컴퓨팅 자원의 양이 이 비용을 결정하네. 예를 들어, storage에 값을 쓰는 것은 두 개의 정수를 더하는 것보다 훨씬 비용이 높네. 자네 함수의 전체 가스 비용은 그 함수를 구성하는 개별 연산들의 가스 비용을 모두 합친 것과 같네.
+두 종류의 [계정(Account)](https://ethereum.org/en/developers/docs/accounts/)이 있고, 모든 계정은 Ether를 주고받거나 홀드할 수 있으며, Contract와 상호작용할 수 있습니다.
+
+- Externally-owned : Private Key를 통해 접근할 수 있는 계정
+- Contract : 블록체인 네트워크에 배포된 프로그램
+
+<br />
+
+계정은 다음과 같이 4개의 필드로 이루어져있는데,
+
+- `nonce`
+
+- `balance`
+
+- `codeHash`
+
+- `storageRoot`
+
+<br />
+
+<img src="./accounts.png" width="622" />
+
+<br />
+
+## 4. Gas
+
+> 함수를 실행하는 데에 얼마나 많은 가스가 필요한지는 그 함수의 로직(논리 구조)이 얼마나 복잡한지에 따라 달라지네. 각각의 연산은 소모되는 [가스 비용(gas cost)](https://ethereum.org/en/developers/docs/gas/)이 있고, 그 연산을 수행하는 데에 소모되는 컴퓨팅 자원의 양이 이 비용을 결정하네. 예를 들어, storage에 값을 쓰는 것은 두 개의 정수를 더하는 것보다 훨씬 비용이 높네. 자네 함수의 전체 가스 비용은 그 함수를 구성하는 개별 연산들의 가스 비용을 모두 합친 것과 같네.
 > view 함수는 사용자에 의해 외부에서 호출되었을 때 가스를 전혀 소모하지 않네. ... 사용자들을 위해 DApp의 가스 사용을 최적화하는 비결은 가능한 모든 곳에 읽기 전용의 external view 함수를 쓰는 것이라는 것만 명심해두게.
 > 참고: 만약 view 함수가 동일 컨트랙트 내에 있는, view 함수가 아닌 다른 함수에서 내부적으로 호출될 경우, 여전히 가스를 소모할 것이네. 이것은 다른 함수가 이더리움에 트랜잭션을 생성하고, 이는 모든 개별 노드에서 검증되어야 하기 때문이네. 그러니 view 함수는 외부에서 호출됐을 때에만 무료라네.
 
@@ -82,14 +108,14 @@ contract MyContract is Ownable {
 
 <br />
 
-## 4. Storage is expensive
+## 5. Storage is expensive
 
 > 비용을 최소화하기 위해서, 진짜 필요한 경우가 아니면 storage에 데이터를 쓰지 않는 것이 좋네. 이를 위해 때때로는 겉보기에 비효율적으로 보이는 프로그래밍 구성을 할 필요가 있네 - 어떤 배열에서 내용을 빠르게 찾기 위해, 단순히 변수에 저장하는 것 대신 함수가 호출될 때마다 배열을 memory에 다시 만드는 것처럼 말이지.
 > 대부분의 프로그래밍 언어에서는, 큰 데이터 집합의 개별 데이터에 모두 접근하는 것은 비용이 비싸네. 하지만 솔리디티에서는 그 접근이 external view 함수라면 storage를 사용하는 것보다 더 저렴한 방법이네. view 함수는 사용자들의 가스를 소모하지 않기 때문이지(가스는 사용자들이 진짜 돈을 쓰는 것이네!).
 
 <br />
 
-## 5. Uint
+## 6. Uint
 
 
 > 레슨 1에서, 우리는 uint에 다른 타입들이 있다는 것을 배웠지. uint8, uint16, uint32, 기타 등등..
@@ -100,7 +126,7 @@ contract MyContract is Ownable {
 
 <br />
 
-## 6. Time units
+## 7. Time units
 
 now : 현재의 유닉스 타임스탬프(1970년 1월 1일부터 지금까지의 초 단위 합) 값
 
@@ -117,9 +143,9 @@ now : 현재의 유닉스 타임스탬프(1970년 1월 1일부터 지금까지�
 
 <br />
 
-## 7. Modifier
+## 8. Modifier
 
-### 7-1. Visibility Modifier
+### 8-1. Visibility Modifier
 
 - private
 - internal
@@ -128,7 +154,7 @@ now : 현재의 유닉스 타임스탬프(1970년 1월 1일부터 지금까지�
 
 <br />
 
-### 7-2. State Modifier
+### 8-2. State Modifier
 
 다음 두 Modifier 모두, 컨트랙트 외부에서 불렸을 때 가스를 전혀 소모하지 않네(하지만 다른 함수에 의해 내부적으로 호출됐을 경우에는 가스를 소모하지)
 
@@ -137,7 +163,7 @@ now : 현재의 유닉스 타임스탬프(1970년 1월 1일부터 지금까지�
 
 <br />
 
-### 7-3. Custom Modifier
+### 8-3. Custom Modifier
 
 ```solidity
   /**
@@ -151,9 +177,7 @@ now : 현재의 유닉스 타임스탬프(1970년 1월 1일부터 지금까지�
 
 <br />
 
-### 7-4. `payable` Modifier
-
-
+### 8-4. `payable` Modifier
 
 <br />
 
