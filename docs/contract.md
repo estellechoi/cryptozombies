@@ -6,8 +6,8 @@
 
 1. Contract, Immutability & Composability
 2. Access Control: `Ownable`
-3. Account
-4. Gas
+3. Account, Balance in wei, Address
+4. Gas fee in gwei, Why needed
 5. Storage is expensive
 6. Uint
 7. Time units
@@ -68,7 +68,7 @@ contract MyContract is Ownable {
 
 <br />
 
-## 3. Account
+## 3. Account, Balance in wei, Address
 
 ### 3-1. 2 Types of Account
 
@@ -93,11 +93,13 @@ contract MyContract is Ownable {
 
 <img src="./accounts.png" width="622" />
 
+사진출처: [Accounts | Ethereum](https://ethereum.org/en/developers/docs/accounts/)
+
 <br />
 
 ### 3-2. Balance in wei
 
-`balance` 표시와 연산시에는 wei를 사용하는데, 1 wei = 0.000000000000000001 Ether 입니다. wei를 사용하는 이유는 전통적인 부동소수점 처리방식을 블록체인에서 그대로 사용하면 약속된 범위를 벗어난 수가 증발해버리기 때문입니다! Ether의 토큰 소수점 자릿수는 18자리인데, 따라서 가장 작은 Ether 단위인 0.000000000000000001 Ether를 1 wei로 매핑하여 연산시에는 정수 연산을 할 수 있게 됩니다. [부동 소수점(Floating Point)란 무엇인가? - modolee](https://steemit.com/kr/@modolee/floating-point) 블로그 글의 설명이 도움이 되었습니다.
+`balance` 표시와 bit 연산시에는 wei를 사용하는데, 1 wei = 0.000000000000000001 ETH 입니다. wei를 사용하는 이유는 전통적인 부동소수점 처리방식을 블록체인에서 그대로 사용하면 약속된 표현범위를 벗어나는 만큼의 ETH 금액이 증발해버리기 때문입니다! Ether의 토큰 소수점 자릿수는 18자리인데, 따라서 가장 작은 Ether 단위인 0.000000000000000001 ETH → 1 wei로 매핑하여 컴퓨터가 bit 연산을 할 때 Balance에 대해 정수 연산을 할 수 있게 했습니다. [부동 소수점(Floating Point)란 무엇인가? - modolee](https://steemit.com/kr/@modolee/floating-point) 블로그 글의 설명이 도움이 되었습니다.
 
 <br />
 
@@ -110,18 +112,32 @@ contract MyContract is Ownable {
 
 <br />
 
-## 4. Gas
+## 4. Gas fee in gwei, Why needed
 
-### 4-1. Gas fee in gwei
+### 4-1. Gas
 
-[Gas](https://ethereum.org/en/developers/docs/gas/)는 Ethereum에서 Transaction을 처리할 때 소모되는 컴퓨팅 파워를 나타내는 단위입니다. 그래서 어떤 사람이 Transaction을 원할 때 네트워크에 지불하는 수수료를 흔히 Gas 비라고 하지요. Gas 비는 다음과 같이 구성되고, 참고로 Gas 비 계산에는 gwei가 사용되는데, 1 gwei = 1000000000 wei 입니다.
-
-- `baseFeePerGas`: Contract 로직을 처리하기 위해 필요한 연산의 수(Gas)만큼 소각되는 Ether
-- `maxPriorityFeePerGas`: Transaction Validator(Miner)에게 팁으로 지불할 Gas당 Ether
+[Gas](https://ethereum.org/en/developers/docs/gas/)는 Contract의 런타임인 [EVM](https://ethereum.org/en/developers/docs/evm/)에서 Transaction을 처리할 때 소모되는 컴퓨팅 파워를 나타내는 단위입니다. [OPCODES FOR THE EVM](https://ethereum.org/en/developers/docs/evm/opcodes) 공식문서에서 연산별로 소모되는 Gas가 어느정도인지 확인할 수 있었습니다! 아무튼, 어떤 사람이 Transaction을 진행하려면 요구되는 연산량만큼의 수수료를 지불해야하는데, 이를 Gas비라고 하지요. [Etherscan](https://etherscan.io/gastracker)에서는 실시간 Gas비 추적과, Gas비에 따른 Transaction 처리 속도 예측을 제공합니다.
 
 <br />
 
-보통 Ether를 전송하기만 하는 단순한 Transaction에는 21000 Gas가 소모되는데요, 만약 1 ETH를 전송하는데 `baseFeePerGas`가 190 gwei, `maxPriorityFeePerGas`가 10 gwei를 지불하겠다고 하면, 다음과 같이 총 Gas 비를 계산할 수 있습니다: _(190 + 10) * 21000 = 4,200,000 gwei = 0.0042 ETH_
+<img src="./gas.png" width="622" />
+
+사진출처: [GAS AND FEES | Ethereum](https://ethereum.org/en/developers/docs/gas/)
+
+<br />
+
+### 4-2. Gas fee in gwei
+
+Gas비는 다음과 같이 구성되고, 참고로 Gas비 계산에는 gwei(giga-wei)가 사용되는데, 1 gwei = 1000000000 wei = 0.000000001 ETH (10⁻⁹ ETH)입니다.
+
+- `baseFeePerGas`: Contract 로직을 처리하기 위해 필요한 연산의 수(Gas)만큼 소각되는 Ether, 네트워크 수요에 따라 기본 Fee에 변동이 있음 (이전 블록의 사이즈가 다음 블록 Gas에 대한 Fee를 결정)
+- `maxPriorityFeePerGas`: Transaction Validator(Miner)에게 팁으로 지불할 Gas당 Ether, 내 요청을 우선적으로 처리해주는 것에 대한 팁
+
+> This means if the block size is greater than the target block size, the protocol will increase the base fee for the following block. Similarly, the protocol will decrease the base fee if the block size is less than the target block size. The amount by which the base fee is adjusted is proportional to how far the current block size is from the target. - [GAS AND FEES | Ethereum](https://ethereum.org/en/developers/docs/gas/)
+
+<br />
+
+보통 Ether를 전송하기만 하는 단순한 Transaction에는 21000 Gas가 소모되는데요, 만약 1 ETH를 전송하는데 `baseFeePerGas`가 190 gwei, `maxPriorityFeePerGas`가 10 gwei를 지불하겠다고 하면, 다음과 같이 총 Gas 비를 계산할 수 있습니다: _(190 + 10) * 21000 = 4,200,000 gwei = 0.0042 ETH_. 따라서 1 ETH를 전송하려면 실제로는 총 1.0042 ETH를 사용해야 합니다.
 
 <br />
 
@@ -133,11 +149,14 @@ contract MyContract is Ownable {
 
 <br />
 
-### 4-2. Why needed ?
+### 4-3. Why needed
 
 Gas 비용은 Ethereum 네트워크를 보호하기 위해 고안된 방법인데, 불필요하고 무거운 연산을 요청하는 등의 방식으로 네트워크 운영을 방해하지 못하도록 요청하는 연산량만큼의 비용을 지불하도록 설계한 것입니다.
 
-> 이더리움은 크고 느린, 하지만 굉장히 안전한 컴퓨터와 같다고 할 수 있네. 자네가 어떤 함수를 실행할 때, 네트워크상의 모든 개별 노드가 함수의 출력값을 검증하기 위해 그 함수를 실행해야 하지. 모든 함수의 실행을 검증하는 수천 개의 노드가 바로 이더리움을 분산화하고, 데이터를 보존하며 누군가 검열할 수 없도록 하는 요소이지.
+> In short, gas fees help keep the Ethereum network secure. By requiring a fee for every computation executed on the network, we prevent bad actors from spamming the network. In order to avoid accidental or hostile infinite loops or other computational wastage in code, each transaction is required to set a limit to how many computational steps of code execution it can use. The fundamental unit of computation is "gas". - [GAS AND FEES | Ethereum](https://ethereum.org/en/developers/docs/gas/)
+
+<br />
+
 > 이더리움을 만든 사람들은 누군가가 무한 반복문을 써서 네트워크를 방해하거나, 자원 소모가 큰 연산을 써서 네트워크 자원을 모두 사용하지 못하도록 만들길 원했다네. 그래서 그들은 연산 처리에 비용이 들도록 만들었고, 사용자들은 저장 공간 뿐만 아니라 연산 사용 시간에 따라서도 비용을 지불해야 한다네. - CryptoZombies Course
 
 <br />
