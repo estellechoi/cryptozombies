@@ -8,10 +8,11 @@
 2. Access Control: `Ownable`
 3. Account, Balance in wei, Address
 4. Gas fee in gwei, Why needed
-5. Storage is expensive
-6. Uint
-7. Time units
-8. Modifier
+5. Finality: in PoW, in PoS
+6. Storage is expensive
+7. Uint
+8. Time units
+9. Modifier
 
 <br />
 
@@ -131,7 +132,7 @@ contract MyContract is Ownable {
 Gas비는 다음과 같이 구성되고, 참고로 Gas비 계산에는 gwei(giga-wei)가 사용되는데, 1 gwei = 1000000000 wei = 0.000000001 ETH (10⁻⁹ ETH)입니다.
 
 - `baseFeePerGas`: Contract 로직을 처리하기 위해 필요한 연산의 수(Gas)만큼 소각되는 Ether, 네트워크 수요에 따라 기본 Fee에 변동이 있음 (이전 블록의 사이즈가 다음 블록 Gas에 대한 Fee를 결정)
-- `maxPriorityFeePerGas`: Transaction Validator(Miner)에게 팁으로 지불할 Gas당 Ether, 내 요청을 우선적으로 처리해주는 것에 대한 팁
+- `maxPriorityFeePerGas`: Transaction Validator에게 팁으로 지불할 Gas당 Ether, 내 요청을 우선적으로 처리해주는 것에 대한 팁
 
 > This means if the block size is greater than the target block size, the protocol will increase the base fee for the following block. Similarly, the protocol will decrease the base fee if the block size is less than the target block size. The amount by which the base fee is adjusted is proportional to how far the current block size is from the target. - [GAS AND FEES | Ethereum](https://ethereum.org/en/developers/docs/gas/)
 
@@ -161,14 +162,32 @@ Gas 비용은 Ethereum 네트워크를 보호하기 위해 고안된 방법인�
 
 <br />
 
-## 5. Storage is expensive
+## 5. Finality: in PoW, in PoS
+
+### 5-1. in PoW
+
+기본적으로 블록에 포함된 Transaciton은 더 이상 변경할 수 없기 때문에 Finality를 가진다고 봅니다. 하지만 Transaction이 완료되더라도 진짜 Finality를 가지게 되었는지 확신하기 위해서는, 최소한 대략 1분 이상의 시간을 두고 기다려야 합니다. 현재 Ethereum의 합의 메커니즘은 [채굴](https://ethereum.org/en/developers/docs/consensus-mechanisms/pow/mining/)을 통한 [PoW](https://ethereum.org/en/developers/docs/consensus-mechanisms/pow/)와 [Longest Chain Rule]()에 기반하는데, 문제는 둘 이상의 채굴자가 동시에 블록 생성에 성공하는 아주 드문 경우에 발생합니다. 두 블록이 동시에 생성되면 Temporary Fork가 만들어지고, 이 때문에 둘 중 하나의 Fork가 Finality를 인정받기까지 최소 6 개의 블록이 추가로 더해질 때까지 (약 1분 이상) Transaction을 확신하지 않고 기다리는 것이 권장됩니다. 따라서 Finality를 확신하기까지 시간이 소요됨을 인지하고 UX 설계시 이를 고려해야 합니다!
+
+> Because miners work in a decentralized way, two valid blocks can get mined at the same time. This creates a temporary fork. Eventually, one of these chains will become the accepted chain after a subsequent block has been mined and added, making it longer. (..ABBR..) But to complicate things further, transactions rejected on the temporary fork may have been included in the accepted chain. This means it could get reversed. So finality refers to the time you should wait before considering a transaction irreversible. For Ethereum, the recommended time is six blocks or just over 1 minute. After six blocks, you can say with relative confidence that the transaction was successful. You can wait longer for even greater assurances. - [FINALITY | Ethereum](https://ethereum.org/en/developers/docs/consensus-mechanisms/pow/#finality)
+
+<br />
+
+### 5-2 in PoS
+
+[PoS](https://ethereum.org/en/developers/docs/consensus-mechanisms/pos/) 기반의 새로 도입될 합의 메커니즘에서는 Finality를 확신하기 더욱 쉬워집니다. 왜냐하면 블록을 생성하는 Validator가 채굴 경쟁에 의해 결정되지 않고, 알고리즘에 의해 랜덤하게 결정되기 때문입니다. 따라서 두 개의 블록이 동시에 생성될 가능성의 사라지고요, 생성된 블록에 대해서는 전체 Validator의 2/3가 동의하면 해당 블록은 Finality를 갖게 됩니다! 더 정확하게는, 하나의 블록 조각(Shard Block)당 최소 128 개 노드로 구성된 Validator Committee가 해당 블록 조각을 검증해줘야하고요, 32 개의 블록이 만들어질 때마다 Validator Committee가 랜덤으로 재구성되기 때문에 Ethereum을 더 안전하게 해준다는 아이디어입니다.
+
+특히 합의에 참여하는 Validator들이 각자가 스테이킹한 소중한 Ether를 담보로 행동하기 때문에 나쁜 행동을 할 유인이 거의 없다고 보고 있는데, 나쁜 행동을 들키면 스테이킹 상태의 Ether를 모두 잃게될 뿐만 아니라, 네트워크에 나쁜 일이 일어나서 Ether의 가치가 폭락한다면 스테이킹으로 묶여있는 그들의 Ether 자산 가치도 떨어지기 때문입니다. 참고로 32 ETH를 스테이킹하면 Validator로 참여할 수 있고요, 더 적은 ETH를 사용하려면 스테이킹 Pool에 참여할 수 있습니다.
+
+<br />
+
+## 6. Storage is expensive
 
 > 비용을 최소화하기 위해서, 진짜 필요한 경우가 아니면 storage에 데이터를 쓰지 않는 것이 좋네. 이를 위해 때때로는 겉보기에 비효율적으로 보이는 프로그래밍 구성을 할 필요가 있네 - 어떤 배열에서 내용을 빠르게 찾기 위해, 단순히 변수에 저장하는 것 대신 함수가 호출될 때마다 배열을 memory에 다시 만드는 것처럼 말이지.
 > 대부분의 프로그래밍 언어에서는, 큰 데이터 집합의 개별 데이터에 모두 접근하는 것은 비용이 비싸네. 하지만 솔리디티에서는 그 접근이 external view 함수라면 storage를 사용하는 것보다 더 저렴한 방법이네. view 함수는 사용자들의 가스를 소모하지 않기 때문이지(가스는 사용자들이 진짜 돈을 쓰는 것이네!).
 
 <br />
 
-## 6. Uint
+## 7. Uint
 
 
 > 레슨 1에서, 우리는 uint에 다른 타입들이 있다는 것을 배웠지. uint8, uint16, uint32, 기타 등등..
@@ -179,7 +198,7 @@ Gas 비용은 Ethereum 네트워크를 보호하기 위해 고안된 방법인�
 
 <br />
 
-## 7. Time units
+## 8. Time units
 
 now : 현재의 유닉스 타임스탬프(1970년 1월 1일부터 지금까지의 초 단위 합) 값
 
@@ -196,9 +215,9 @@ now : 현재의 유닉스 타임스탬프(1970년 1월 1일부터 지금까지�
 
 <br />
 
-## 8. Modifier
+## 9. Modifier
 
-### 8-1. Visibility Modifier
+### 9-1. Visibility Modifier
 
 - private
 - internal
@@ -207,7 +226,7 @@ now : 현재의 유닉스 타임스탬프(1970년 1월 1일부터 지금까지�
 
 <br />
 
-### 8-2. State Modifier
+### 9-2. State Modifier
 
 다음 두 Modifier 모두, 컨트랙트 외부에서 불렸을 때 가스를 전혀 소모하지 않네(하지만 다른 함수에 의해 내부적으로 호출됐을 경우에는 가스를 소모하지)
 
@@ -216,7 +235,7 @@ now : 현재의 유닉스 타임스탬프(1970년 1월 1일부터 지금까지�
 
 <br />
 
-### 8-3. Custom Modifier
+### 9-3. Custom Modifier
 
 ```solidity
   /**
@@ -230,7 +249,7 @@ now : 현재의 유닉스 타임스탬프(1970년 1월 1일부터 지금까지�
 
 <br />
 
-### 8-4. `payable` Modifier
+### 9-4. `payable` Modifier
 
 <br />
 
