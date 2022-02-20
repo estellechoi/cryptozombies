@@ -8,7 +8,9 @@ Recording what I learned from CryptoZombies course!
 
 #### Docs
 
-- [Contract & Solidity](./docs/contract.md)
+- [Contract, Immutability & Composability, Address, Gas, Finality in PoW/PoS](./docs/contract.md)
+- [Solidity Basics](./docs/solidity.md)
+- [EVM](./docs/evm.md)
 
 <br />
 
