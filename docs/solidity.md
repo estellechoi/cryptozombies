@@ -108,7 +108,12 @@ contract MyContract is Ownable {
 
 <br />
 
-Open Zeppelin은 `Ownable` 외에도 유용한 재사용 Contract를 다수 제공하는데요, 이러한 Contract 라이브러리들은 [npm]()을 사용해서 다운로드할 수 있습니다. 대부분의 Solidity 컴파일 도구들이 프로젝트의 `node_modules` 디렉토리에서 Import된 Contract를 탐색합니다! Solidity 공식문서에서는 이러한 오픈소스 라이브러리를 사용하기를 적극 권장하고 있는데, 개발시간 단축 뿐만 아니라 보안 측면에서도 이점이 있기 때문입니다.
+Open Zeppelin은 `Ownable` 외에도 유용한 재사용 Contract를 다수 제공하는데요, 이러한 Contract 라이브러리들은 [Yarn](https://yarnpkg.com/)과 같은 Node 패키지 매니저를 사용해서 다운로드할 수 있습니다. 대부분의 Solidity 컴파일 도구들이 Import된 Contract를 프로젝트의 `node_modules` 디렉토리에서 탐색하기 때문입니다. Solidity 공식문서에서는 이러한 오픈소스 라이브러리를 사용하기를 적극 권장하고 있는데, 개발시간 단축 뿐만 아니라 보안 측면에서도 오픈소스 라이브러리들이 충분한 Audit을 통과한 경우가 많다는 이점이 있기 때문입니다.
+
+```zsh
+# see https://yarnpkg.com/package/@openzeppelin/contracts
+yarn add @openzeppelin/contracts
+```
 
 <br />
 
@@ -132,9 +137,17 @@ contract SampleContract {
 
 ### 4-2. Memory
 
-Contract의 특정 함수가 실행되는 동안만 유지되는 데이터는 Memory에 저장됩니다. Memory는 각각의 [메시지 콜]()에 대해 그 인스턴스를 제공합니다.
+Contract의 특정 함수가 실행되는 동안만 유지되는 데이터는 Memory에 저장됩니다. 예를 들어, 다음과 같이 주어지는 문자열을 사용하여 랜덤 `uint` 값을 반환하는 함수의 파라미터인 `_str` 값은 함수가 실행되는 동안만 유지되면 되므로 Memory에 저장하게 되죠!
 
 ```solidity
+function _generateRandomUint(string memory _str)
+        private
+        view
+        returns (uint256)
+    {
+        uint256 rand = uint256(keccak256(abi.encode(_str)));
+        return rand % dnaModulus;
+    }
 ```
 
 <br />
