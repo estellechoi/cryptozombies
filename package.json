@@ -1,0 +1,11 @@
+{
+  "name": "cryptozombies",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/estellechoi/cryptozombies.git",
+  "author": "Estelle Choi <estele.choi@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.5.0"
+  }
+}
