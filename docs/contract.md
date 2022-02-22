@@ -6,6 +6,7 @@
 2. Account, Balance in wei, Address
 3. Gas fee in gwei, Why needed
 4. Finality: in PoW, in PoS
+5. JSON-RPC API
 
 <br />
 
@@ -147,6 +148,12 @@ Gas 비용은 Ethereum 네트워크를 보호하기 위해 고안된 방법인�
 [PoS](https://ethereum.org/en/developers/docs/consensus-mechanisms/pos/) 기반의 새로 도입될 합의 메커니즘에서는 Finality를 확신하기 더욱 쉬워집니다. 왜냐하면 블록을 생성하는 Validator가 채굴 경쟁에 의해 결정되지 않고, 알고리즘에 의해 랜덤하게 결정되기 때문입니다. 따라서 두 개의 블록이 동시에 생성될 가능성이 사라지고요, 생성된 블록에 대해서는 전체 Validator의 2/3가 동의하면 해당 블록은 Finality를 갖게 됩니다! 더 정확하게는, 하나의 [Shard](https://ethereum.org/en/upgrades/shard-chains/) 블록당 최소 128 개 노드로 구성된 Validator Committee가 해당 블록 조각을 검증해줘야하고요, 32 개의 블록이 만들어질 때마다 Validator Committee가 랜덤으로 재구성되기 때문에 Ethereum을 더 안전하게 해준다는 아이디어입니다.
 
 특히 합의에 참여하는 Validator들이 각자가 스테이킹한 소중한 Ether를 담보로 행동하기 때문에 나쁜 행동을 할 유인이 거의 없다고 보고 있는데, 나쁜 행동을 들키면 스테이킹 상태의 Ether를 모두 잃게될 뿐만 아니라, 네트워크에 나쁜 일이 일어나서 Ether의 가치가 폭락한다면 스테이킹으로 묶여있는 그들의 Ether 자산 가치도 떨어지기 때문입니다. 참고로 32 ETH를 스테이킹하면 Validator로 참여할 수 있고요, 더 적은 ETH를 사용하려면 스테이킹 Pool에 참여할 수 있습니다.
+
+<br />
+
+## 5. JSON-RPC API
+
+DApp에서 Ethereum 블록체인 상의 데이터를 읽거나, Transaction을 처리하려면 Ethereum 노드에 연결해야 합니다. Ethereum 노드라는 것은 [Ethereum Client](https://ethereum.org/en/developers/docs/nodes-and-clients/#execution-clients)를 실행중인 컴퓨터인데, Ethereum의 구현제인 Ethereum Client를 실행하는 노드들이 모여 분산된 Ethereum 블록체인을 구성하는 것이죠. 모든 Ethereum Client는 [JSON-RPC](https://ethereum.org/en/developers/docs/apis/json-rpc/) 명세를 따르는 엔드포인트 구현체를 갖고있는데, 이를 통해 외부에서 Ethereum Client를 실행하고 있는 Ethereum 노드들에 연결할 수 있습니다. 웹 프론트엔드에서 Ethereum 노드에 직접 연결할 때는 보통 JavaScript 라이브러리를 사용하는데 [`ethers`](https://docs.ethers.io/v5/), [`web3`](https://web3js.readthedocs.io/en/v1.7.0/)가 대표적입니다. 이 라이브러리들은 지갑 생성, 토큰 전송, 서명 등 기본적인 거의 모든 기능을 지원하고요, [ABI](https://docs.soliditylang.org/en/v0.5.3/abi-spec.html) 포맷의 컴파일 된 Contract를 읽는 방식으로 Contract 함수를 직접 호출할 수도 있습니다.
 
 <br />
 

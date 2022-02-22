@@ -9,7 +9,7 @@ Recording what I learned from CryptoZombies course!
 #### Docs
 
 - [Contract, Immutability & Composability, Address, Gas, Finality in PoW/PoS](./docs/contract.md)
-- [Solidity Basics](./docs/solidity.md)
+- [Solidity, Security, Access Control, Storage vs Memory](./docs/solidity.md)
 - [EVM](./docs/evm.md)
 
 <br />
