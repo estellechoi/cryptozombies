@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11; // use the specified solc version
 
-import "./utils/Ownable.sol";
-
-// import "@openzeppelin/contracts/ownership/Ownable.sol";
+// import "./utils/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 // ZombieFactory extends Ownable to use onlyOwner modifier
 contract ZombieFactory is Ownable {
