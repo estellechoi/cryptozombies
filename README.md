@@ -46,6 +46,15 @@ brew install jq
 
 <br />
 
+### Install packages
+
+```zsh
+# npm install -g yarn (if needed)
+yarn install
+```
+
+<br />
+
 ### Compile contracts
 
 ```zsh
