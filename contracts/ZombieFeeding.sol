@@ -30,7 +30,7 @@ contract ZombieFeeding is ZombieFactory {
     // = KittyInterface(ckAddress);
     KittyInterface kittyContract;
 
-    modifier ownerOf(uint256 _zombieId) {
+    modifier onlyOwnerOf(uint256 _zombieId) {
         require(msg.sender == zombieToOwner[_zombieId]);
         _;
     }
@@ -54,7 +54,7 @@ contract ZombieFeeding is ZombieFactory {
         uint256 _zombieId,
         uint256 _targetDna,
         string memory _species
-    ) internal ownerOf(_zombieId) {
+    ) internal onlyOwnerOf(_zombieId) {
         // check if the caller's address is same as the one of zombie owner
         // this line replaced with modifier "ownerOf"
         // require(zombieToOwner[_zombieId] == msg.sender);

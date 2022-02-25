@@ -20,6 +20,7 @@ Recording what I learned from CryptoZombies course!
 - lesson2, you can [feed my zombies, who like to eat CryptoKitties](https://share.cryptozombies.io/ko/lesson/2/share/Estelle_Choi?id=Y3p8MTc1NTA2)
 - lesson3, check out [my zombies](https://share.cryptozombies.io/ko/lesson/3/share/Estelle_Choi?id=Y3p8MTc1NTA2)
 - lesson4, try [a battle with my zombies](https://share.cryptozombies.io/ko/lesson/4/share/Kitty_Zombie?id=WyJjenwxNzU1MDYiLDIsMTRd)
+- lesson5, check out [my new zombies](https://share.cryptozombies.io/ko/lesson/5/share/H4XF13LD_MORRIS_%F0%9F%92%AF%F0%9F%92%AF%F0%9F%98%8E%F0%9F%92%AF%F0%9F%92%AF?id=Y3p8MTc1NTA2)
 
 <br />
 
