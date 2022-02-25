@@ -4,7 +4,8 @@ pragma solidity ^0.8.11;
 import "./ZombieBattle.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-/* @title a contract that handles transfering ownership of zombies.
+/**
+ * @title a contract that handles transfering ownership of zombies.
  * @author estellechoi
  * @dev follows ERC721 by OpenZeppelin
  * the above comments follow parts of natspec
