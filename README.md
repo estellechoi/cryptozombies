@@ -21,7 +21,7 @@ Recording what I learned from CryptoZombies course!
 - lesson3, check out [my zombies](https://share.cryptozombies.io/ko/lesson/3/share/Estelle_Choi?id=Y3p8MTc1NTA2)
 - lesson4, try [a battle with my zombies](https://share.cryptozombies.io/ko/lesson/4/share/Kitty_Zombie?id=WyJjenwxNzU1MDYiLDIsMTRd)
 - lesson5, check out [my new zombies](https://share.cryptozombies.io/ko/lesson/5/share/H4XF13LD_MORRIS_%F0%9F%92%AF%F0%9F%92%AF%F0%9F%98%8E%F0%9F%92%AF%F0%9F%92%AF?id=Y3p8MTc1NTA2)
-- lesson6, the interface codes are [here](https://github.com/estellechoi/cryptozombies-ui), built with Vue3 and TypeScript
+- lesson6, the interface codes are [here](https://github.com/estellechoi/cryptozombies-ui), built with Vue3 and TypeScript, and check out [the phantom of web3](https://share.cryptozombies.io/ko/lesson/6/share/The_Phantom_of_Web3?id=Y3p8MTc1NTA2)
 
 <br />
 
