@@ -3,7 +3,7 @@
 <br />
 
 1. Contract, Immutability & Composability
-2. Account, Balance in wei, Address
+2. Account, Balance in wei, Address, Key Generation, State
 3. Gas fee in gwei, Why needed
 4. Finality: in PoW, in PoS
 5. JSON-RPC API
@@ -40,7 +40,7 @@ Contract의 또다른 특징은 [Composability](https://ethereum.org/en/develope
 
 <br />
 
-## 2. Account, Balance in wei, Address
+## 2. Account, Balance in wei, Address, Key Generation, State
 
 ### 2-1. 2 Types of Account
 
@@ -131,7 +131,7 @@ type StateAccount struct {
 
 <br />
 
-### 2-4. Account KeyStore
+### 2-4. Key Generation
 
 [`accounts/keystore`](https://github.com/ethereum/go-ethereum/blob/da16d089c09dfbe5497862496c6f34d32ba6bd0e/accounts/keystore/keystore.go) 패키지는 계정 키가 저장되는 디렉토리를 관리하는 패키지입니다. `NewAccount(passphrase)` 함수 구현 부분을 보면, 암호화에 사용할 임의의 키 값 `passphrase`를 파라미터로 받은 후 `storeNewKey(storage, reader, passphrase)` 함수를 호출할 때 사용합니다. `storeNewKey` 함수는 개인 키를 생성한 후, 이 키 값에 기반한 계정까지 모두 생성하여 `key, account, err`를 반환합니다.
 
@@ -197,6 +197,52 @@ func newKeyFromECDSA(privateKeyECDSA *ecdsa.PrivateKey) *Key {
 		PrivateKey: privateKeyECDSA,
 	}
 	return key
+}
+```
+
+<br />
+
+### 2-5. State
+
+이더리움에서 어떤 계정에 접근하여 상태를 변경하려면 `stateObject` `struct`를 통해 접근한 후 변경해야 합니다. `db` 필드에는 해당 계정의 상태를 저장할 DBMS에 대한 포인터를 저장합니다. 계정 상태에 변경이 발생하면 `CommitTrie(db)` 함수를 호출하여 변경된 Trie 데이터를 [LevelDB](https://github.com/google/leveldb)에 업데이트합니다.
+
+```go
+// core/state/state_object.go
+
+// stateObject represents an Ethereum account which is being modified.
+//
+// The usage pattern is as follows:
+// First you need to obtain a state object.
+// Account values can be accessed and modified through the object.
+// Finally, call CommitTrie to write the modified storage trie into a database.
+type stateObject struct {
+	address  common.Address
+	addrHash common.Hash // hash of ethereum address of the account
+	data     types.StateAccount
+	db       *StateDB
+
+	// DB error.
+	// State objects are used by the consensus core and VM which are
+	// unable to deal with database-level errors. Any error that occurs
+	// during a database read is memoized here and will eventually be returned
+	// by StateDB.Commit.
+	dbErr error
+
+	// Write caches.
+	trie Trie // storage trie, which becomes non-nil on first access
+	code Code // contract bytecode, which gets set when code is loaded
+
+	originStorage  Storage // Storage cache of original entries to dedup rewrites, reset for every transaction
+	pendingStorage Storage // Storage entries that need to be flushed to disk, at the end of an entire block
+	dirtyStorage   Storage // Storage entries that have been modified in the current transaction execution
+	fakeStorage    Storage // Fake storage which constructed by caller for debugging purpose.
+
+	// Cache flags.
+	// When an object is marked suicided it will be delete from the trie
+	// during the "update" phase of the state transition.
+	dirtyCode bool // true if the code was updated
+	suicided  bool
+	deleted   bool
 }
 ```
 
