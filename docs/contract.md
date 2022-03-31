@@ -46,20 +46,77 @@ Contract의 또다른 특징은 [Composability](https://ethereum.org/en/develope
 
 두 종류의 [계정(Account)](https://ethereum.org/en/developers/docs/accounts/)이 있고, 모든 계정은 Ether를 주고받거나 홀드할 수 있으며, Contract와 상호작용할 수 있습니다.
 
-- Externally-owned 계정: Private Key를 통해 접근할 수 있는 계정, 계정의 소유자에 의해 Transaction을 시작할 수 있음
-- Contract 계정: 블록체인 네트워크에 배포된 프로그램
+- Externally-owned Account(EOA): Private Key를 통해 접근할 수 있는 계정, 계정의 소유자에 의해 Transaction을 시작할 수 있음
+- Contract Account(CA): 블록체인 네트워크에 배포된 프로그램
 
 <br />
 
-계정은 다음과 같이 4개의 필드로 이루어져있습니다.
+Go로 작성된 [Ethereum 코드](https://github.com/ethereum/go-ethereum/blob/master/accounts/accounts.go)를 확인해보면, 계정은 다음과 같이 `struct` 타입으로 정의되어 있습니다.
 
-- `nonce`: 계정이 만들어낸 Transaction의 수, Contract 계정의 경우 해당 계정이 만든 Contract의 수를 나타내는데, 이는 Contract를 배포하는 것 자체가 Transaction이기 때문
+```go
+// accounts/accounts.go
 
-- `balance`: 계정이 소유하는 Ether 잔액
+// ...
 
-- `codeHash`: Contract 코드의 Hash 값으로 이 Hash를 사용해서 코드를 찾을 수 있음, Externally-owned 계정의 `codeHash`는 빈 String의 Hash 값
+// Account represents an Ethereum account located at a specific location defined
+// by the optional URL field.
+type Account struct {
+	Address common.Address `json:"address"` // Ethereum account address derived from the key
+	URL     URL            `json:"url"`     // Optional resource locator within a backend
+}
 
-- `storageRoot`: 계정 저장소(Storage)에 저장되는 콘텐츠는 `mapping` 형태로 암호화되는데, 이때 Key의 256bit Hash 값
+// ...
+```
+
+<br />
+
+계정의 고유한 주소값인 `Address` 필드는 20bytes 고정 배열인데, 이는 [`types.go`](https://github.com/ethereum/go-ethereum/blob/da16d089c09dfbe5497862496c6f34d32ba6bd0e/common/types.go#L201) 파일에서 확인할 수 있습니다.
+
+```go
+// types.go
+
+// ...
+
+const (
+	// ...
+
+	// AddressLength is the expected length of the address
+	AddressLength = 20
+)
+
+// ...
+
+type Address [AddressLength]byte
+
+// ...
+```
+
+<br />
+
+계정의 상태는 다음과 같이 4개의 필드로 이루어져있습니다.
+
+```go
+// core/types/state_account.go
+
+// ...
+
+// StateAccount is the Ethereum consensus representation of accounts.
+// These objects are stored in the main account trie.
+type StateAccount struct {
+	Nonce    uint64
+	Balance  *big.Int
+	Root     common.Hash // merkle root of the storage trie
+	CodeHash []byte
+}
+```
+
+- `Nonce`: 계정이 만들어낸 Transaction의 수, Contract 계정의 경우 해당 계정이 만든 Contract의 수를 나타내는데, 이는 Contract를 배포하는 것 자체가 Transaction이기 때문
+
+- `Balance`: 계정이 소유하는 Ether 잔액
+
+- `CodeHash`: Contract 코드의 Hash 값으로 이 Hash를 사용해서 코드를 찾을 수 있음, Externally-owned 계정의 `codeHash`는 빈 String의 Hash 값
+
+- `Root`: 계정 저장소(Storage)에 저장되는 콘텐츠는 `mapping` 형태로 암호화되는데, 이때 Key의 256bit Hash 값
 
 <br />
 
