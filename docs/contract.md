@@ -112,11 +112,11 @@ type StateAccount struct {
 
 - `Nonce`: 계정이 만들어낸 Transaction의 수, Contract 계정의 경우 해당 계정이 만든 Contract의 수를 나타내는데, 이는 Contract를 배포하는 것 자체가 Transaction이기 때문
 
-- `Balance`: 계정이 소유하는 Ether 잔액
+- `Balance`: 계정이 소유하는 Ether 잔액 ([wei](#user-content-2-2-balance-in-wei))
 
-- `CodeHash`: Contract 코드의 Hash 값으로 이 Hash를 사용해서 코드를 찾을 수 있음, Externally-owned 계정의 `codeHash`는 빈 String의 Hash 값
+- `CodeHash`: Contract byte 코드의 Hash 값으로 이 Hash를 사용해서 코드를 찾을 수 있음, Externally-owned 계정의 `codeHash`는 빈 String의 Hash 값
 
-- `Root`: 계정 저장소(Storage)에 저장되는 콘텐츠는 `mapping` 형태로 암호화되는데, 이때 Key의 256bit Hash 값
+- `Root`: 계정의 상태 정보가 저장될 Storage 트리의 루트 노드를 256bit Hashing한 값
 
 <br />
 
