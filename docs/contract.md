@@ -56,16 +56,12 @@ Go로 작성된 [Ethereum 코드](https://github.com/ethereum/go-ethereum/blob/m
 ```go
 // accounts/accounts.go
 
-// ...
-
 // Account represents an Ethereum account located at a specific location defined
 // by the optional URL field.
 type Account struct {
 	Address common.Address `json:"address"` // Ethereum account address derived from the key
 	URL     URL            `json:"url"`     // Optional resource locator within a backend
 }
-
-// ...
 ```
 
 <br />
@@ -74,8 +70,6 @@ type Account struct {
 
 ```go
 // types.go
-
-// ...
 
 const (
 	// ...
@@ -87,8 +81,6 @@ const (
 // ...
 
 type Address [AddressLength]byte
-
-// ...
 ```
 
 <br />
@@ -97,8 +89,6 @@ type Address [AddressLength]byte
 
 ```go
 // core/types/state_account.go
-
-// ...
 
 // StateAccount is the Ethereum consensus representation of accounts.
 // These objects are stored in the main account trie.
@@ -138,6 +128,77 @@ type StateAccount struct {
 
 - Externally-owned Account: 임의의 32bytes 개인 키를 ECDSA에 통과시켜 256bit 공개 키를 생성하고, 이 공개 키를 Keccak256 Hash 함수에 통과시켜 32bytes 값을 얻어낸 후 이중 마지막 20bytes를 절삭하여 계정 주소로 사용함, 개인 키는 길이가 64인 Hex 문자열로 보통 라이브러리를 사용하여 랜덤 생성함
 - Contract Account: Contract 배포자의 주소와 `nonce` 값으로 주소가 만들어짐
+
+<br />
+
+### 2-4. Account KeyStore
+
+[`accounts/keystore`](https://github.com/ethereum/go-ethereum/blob/da16d089c09dfbe5497862496c6f34d32ba6bd0e/accounts/keystore/keystore.go) 패키지는 계정 키가 저장되는 디렉토리를 관리하는 패키지입니다. `NewAccount(passphrase)` 함수 구현 부분을 보면, 암호화에 사용할 임의의 키 값 `passphrase`를 파라미터로 받은 후 `storeNewKey(storage, reader, passphrase)` 함수를 호출할 때 사용합니다. `storeNewKey` 함수는 개인 키를 생성한 후, 이 키 값에 기반한 계정까지 모두 생성하여 `key, account, err`를 반환합니다.
+
+```go
+// accounts/keystore/keystore.go
+
+// NewAccount generates a new key and stores it into the key directory,
+// encrypting it with the passphrase.
+func (ks *KeyStore) NewAccount(passphrase string) (accounts.Account, error) {
+	_, account, err := storeNewKey(ks.storage, crand.Reader, passphrase)
+	if err != nil {
+		return accounts.Account{}, err
+	}
+	// Add the account to the cache immediately rather
+	// than waiting for file system notifications to pick it up.
+	ks.cache.add(account)
+	ks.refreshWallets()
+	return account, nil
+}
+```
+
+<br />
+
+다음은 `storeNewKey` 함수의 구현부인데, 내부적으로 `newKey(rand)` 함수를 호출하고 있는 것을 확인할 수 있습니다. `newKey` 함수는 실질적인 키 생성 과정을 담고있는데, 이 함수 내에서 개인 키를 생성하고, ECDSA에 통과시켜 공개 키를 생성하고, 공개 키를 다시 Hashing한 후 최종 20bytes를 절삭하여 계정의 주소값을 만들어내는 일련의 과정이 모두 여기에서 일어납니다.
+
+```go
+// accounts/keystore/key.go
+
+func storeNewKey(ks keyStore, rand io.Reader, auth string) (*Key, accounts.Account, error) {
+    // Key 구조체의 포인터 반환
+	key, err := newKey(rand)
+	if err != nil {
+		return nil, accounts.Account{}, err
+	}
+
+	a := accounts.Account{
+		Address: key.Address,
+		URL:     accounts.URL{Scheme: KeyStoreScheme, Path: ks.JoinPath(keyFileName(key.Address))},
+	}
+	if err := ks.StoreKey(a.URL.Path, key, auth); err != nil {
+		zeroKey(key.PrivateKey)
+		return nil, a, err
+	}
+	return key, a, err
+}
+```
+
+<br />
+
+`newKey(rand)` 함수는 생성한 키 정보들을 `Key` `struct`에 담아 포인터를 반환합니다. 코드는 [`newKeyFromECDSA(*ecdsa.PrivateKey)`](https://github.com/ethereum/go-ethereum/blob/da16d089c09dfbe5497862496c6f34d32ba6bd0e/accounts/keystore/key.go#L133)에서 확인할 수 있습니다.
+
+```go
+// accounts/keystore/key.go
+
+func newKeyFromECDSA(privateKeyECDSA *ecdsa.PrivateKey) *Key {
+	id, err := uuid.NewRandom()
+	if err != nil {
+		panic(fmt.Sprintf("Could not create random uuid: %v", err))
+	}
+	key := &Key{
+		Id:         id,
+		Address:    crypto.PubkeyToAddress(privateKeyECDSA.PublicKey),
+		PrivateKey: privateKeyECDSA,
+	}
+	return key
+}
+```
 
 <br />
 
