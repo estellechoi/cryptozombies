@@ -134,10 +134,10 @@ type StateAccount struct {
 
 ### 2-3. Address
 
-계정 주소는 각각 다음에 따라 생성됩니다.
+모든 이더리움의 계정은 개인 키(Private Key)와 공개 키(Public Key)의 쌍으로 정의되는데, 개인 키와 공개 키를 비대칭 키(Asymmetric Key)라고 부릅니다. 이더리움에서는 비대칭 암호화 알고리즘으로 비트코인의 [ECDSA(Elliptic Curve Digital Signature Algorithm)](https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm) 라이브러리인 [`secp256k1`](https://github.com/bitcoin-core/secp256k1/blob/master/src/secp256k1.c)을 사용하는데, 비트코인의 라이브러리는 C언어로 작성되어있기 때문에 Go로 래핑하여 사용합니다. 
 
-- Externally-owned 계정: Public Key의 256bit Hash 값의 마지막 20byte가 계정 주소로 사용됨 /  Public Key는 Private Key로부터 생성되고, Private Key는 길이가 64인 Hex 문자열로 보통 라이브러리를 사용하여 랜덤 생성함
-- Contract 계정: Contract 배포자의 주소와 `nonce` 값으로 주소가 만들어짐
+- Externally-owned Account: 임의의 32bytes 개인 키를 ECDSA에 통과시켜 256bit 공개 키를 생성하고, 이 공개 키를 Keccak256 Hash 함수에 통과시켜 32bytes 값을 얻어낸 후 이중 마지막 20bytes를 절삭하여 계정 주소로 사용함, 개인 키는 길이가 64인 Hex 문자열로 보통 라이브러리를 사용하여 랜덤 생성함
+- Contract Account: Contract 배포자의 주소와 `nonce` 값으로 주소가 만들어짐
 
 <br />
 
