@@ -204,7 +204,7 @@ func newKeyFromECDSA(privateKeyECDSA *ecdsa.PrivateKey) *Key {
 
 ### 2-5. State
 
-이더리움에서 어떤 계정에 접근하여 상태를 변경하려면 `stateObject` `struct`를 통해 접근한 후 변경해야 합니다. `db` 필드에는 해당 계정의 상태를 저장할 DBMS에 대한 포인터를 저장합니다. 계정 상태에 변경이 발생하면 `CommitTrie(db)` 함수를 호출하여 변경된 Trie 데이터를 [LevelDB](https://github.com/google/leveldb)에 업데이트합니다.
+이더리움에서 어떤 계정에 접근하여 상태를 변경하려면 `stateObject` `struct`를 통해 접근한 후 변경해야 합니다. 이 `struct`의 `db` 필드에는 해당 계정의 상태를 저장할 DBMS에 대한 포인터를 저장합니다. 계정 상태에 변경이 발생하면 `CommitTrie(db)` 함수를 호출하여 변경된 Trie 데이터를 [LevelDB](https://github.com/google/leveldb)에 업데이트합니다.
 
 ```go
 // core/state/state_object.go
