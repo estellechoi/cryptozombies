@@ -40,7 +40,7 @@ Contract의 또다른 특징은 [Composability](https://ethereum.org/en/develope
 
 <br />
 
-## 2. Account, Balance in wei, Address, Key Generation, State
+## 2. Account, Balance in wei, Address, ECDSA, Key Generation
 
 ### 2-1. 2 Types of Account
 
@@ -124,14 +124,52 @@ type StateAccount struct {
 
 ### 2-3. Address
 
-모든 이더리움의 계정은 개인 키(Private Key)와 공개 키(Public Key)의 쌍으로 정의되는데, 개인 키와 공개 키를 비대칭 키(Asymmetric Key)라고 부릅니다. 이더리움에서는 비대칭 암호화 알고리즘으로 비트코인의 [ECDSA(Elliptic Curve Digital Signature Algorithm)](https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm) 라이브러리인 [`secp256k1`](https://github.com/bitcoin-core/secp256k1/blob/master/src/secp256k1.c)을 사용하는데, 비트코인의 라이브러리는 C언어로 작성되어있기 때문에 Go로 래핑하여 사용합니다. 
+모든 이더리움의 계정은 개인 키(Private Key)와 공개 키(Public Key)의 쌍으로 정의되는데, 개인 키를 비대칭 암호화해서 공개 키를 생성하기 때문에 이 두 키를 비대칭 키(Asymmetric Key)라고 부릅니다. 개인 키로는 공개 키를 얻어낼 수 있지만, 공개 키로는 개인 키를 알 수 없기 때문에 "비대칭" 암호화라고 말합니다. 이더리움에서는 비대칭 암호화 알고리즘으로 비트코인의 [ECDSA(Elliptic Curve Digital Signature Algorithm)](https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm) 라이브러리인 [`secp256k1`](https://github.com/bitcoin-core/secp256k1/blob/master/src/secp256k1.c)을 사용하는데, 비트코인의 라이브러리는 C언어로 작성되어있기 때문에 Go로 래핑하여 사용합니다.
 
 - Externally-owned Account: 임의의 32bytes 개인 키를 ECDSA에 통과시켜 256bit 공개 키를 생성하고, 이 공개 키를 Keccak256 Hash 함수에 통과시켜 32bytes 값을 얻어낸 후 이중 마지막 20bytes를 절삭하여 계정 주소로 사용함, 개인 키는 길이가 64인 Hex 문자열로 보통 라이브러리를 사용하여 랜덤 생성함
 - Contract Account: Contract 배포자의 주소와 `nonce` 값으로 주소가 만들어짐
 
 <br />
 
-### 2-4. Key Generation
+### 2-4. ECDSA
+
+ECDSA를 일반적인 [AES]() 암호화와 혼동해서는 안됩니다. 보통 어떤 데이터를 암호화했다고하면 그 내용을 알 수 없도록 Encrypt 하는 것을 말하지만, ECDSA는 데이터를 숨기는 것이 아니라 해당 데이터가 외부의 간섭을 받지 않았다는 사실을 보장하는 역할을 하는 알고리즘입니다. 이더리움에서는 어떤 Transaction이 다른 누구도 아닌 해당 계정의 소유자에 의해 만들어졌음을 보장하기 위해 Transaction을 전송할 때 개인 키를 사용해서 디지털 서명을 하는데, 이 디지털 서명을 검증할 때는 개인 키가 아닌 공개 키가 사용됩니다. 개인 키는 비밀이라 접근할 수 없으니까요! 이때 사용되는 공개 키를 처음 생성할 때 ECDSA가 사용됩니다.
+
+> You shouldn't confuse ECDSA with AES (Advanced Encryption Standard) which is to encrypt the data. ECDSA does not encrypt or prevent someone from seeing or accessing your data, what it protects against though is making sure that the data was not tampered with. - [Understanding How ECDSA Protects Your Data](https://www.instructables.com/Understanding-how-ECDSA-protects-your-data/#step1)
+
+<br />
+
+ECDSA의 동작 방식을 간단히 설명하면 이렇습니다.
+
+- 개인 키를 생성한다. 개인 키는 자신 외에 그 누구도 알 수 없는 비밀 키이다
+- ECDSA 곡선 그래프를 이루는 방정식에 개인 키를 대입해서 공개 키를 생성한다
+- 이제 이 공개 키를 사용해서 누구나 내가 만든 디지털 서명이 유효한지 검사할 수 있다
+- 디지털 서명은 Transaction을 전송할 때마다 만드는데, 개인 키와 데이터 파일의 Hash 값을 사용해서 디지털 서명을 생성한다
+- 이 디지털 서명은 비밀 키를 사용해서 만들지만, 누구나 공개 키만을 사용해서 이 디지털 서명이 유효한지 검사할 수 있다
+- 다시 말해, 개인 키 소유자가 아니면 개인 키를 알지 못하기 때문에 그 누구도 서명을 위조할 수는 없지만, 누구나 공개 키를 사용해서 해당 서명이 유효한지 확인할 수는 있다
+- 공개 키를 역추적해서 개인 키를 알 수 없는데, 어떻게 서명을 검증할 수 있을까?
+- 개인 키를 사용해서 만든 디지털 서명은 두 개의 파트 R과 S로 이루어진다
+- 공개 키와 S를 또 하나의 마법 방정식에 넣었을 때 그 결과가 R과 같으면 해당 서명은 유효하다고 확언할 수 있다
+- 이는 수학적으로 증명되었기 때문이다
+
+<br />
+
+이제 ECDSA의 수학적 배경을 조금 더 살펴보겠습니다.
+
+- 정수만 사용
+- Modulus(나머지 연산)
+
+<br />
+
+ECDSA는 특정 범위 내의 정수만 사용하는 것이 특징인데, 해당 범위는 디지털 서명을 만들 때 몇 bit를 사용할 것인지에 따라 결정됩니다. 보통 디지털 서명에는 160bits를 사용하는데, 160bits는 2¹⁶⁰ 가지 수를 표현할 수 있기 때문에 사용하는 숫자의 범위는 0 부터 2¹⁶⁰ - 1 이 되고, 최대 49자릿수의 숫자까지 포함할 수 있게 됩니다. ECDSA는 20bytes(= 160bits) Hash를 생성하는 [SHA1 Hash 알고리즘](https://en.wikipedia.org/wiki/Cryptographic_hash_function)을 사용합니다. 컴퓨터에서 하나의 텍스트 파일은 최종적으로 연속된 byte(= 8bits)의 집합으로 해석되는데, 각각의 byte는 0 ~ 255 사이의 십진수 숫자를 나타냅니다. 8bits가 256(2⁸)가지 수를 나타낼 수 있기 때문입니다. SHA1 Hash 알고리즘은 데이터 파일을 Hashing할 때 각 byte가 나타내는 십진수 숫자들을 모두 더한 후 매우 복잡한 Modulus를 사용하여 고정된 길이의 숫자를 얻습니다.
+
+ECDSA 그래프를 이루는 방정식은 이렇습니다:_`𝘺² = (𝘹³ + 𝘢𝘹 + 𝘣) 𝗆𝗈𝖽 𝘱`_. 방정식에서 Modulus를 사용하고있기 때문에 `𝘺²`의 값은 `𝘱`보다 작은 숫자임을 알 수 있고요, ECDSA에서는 정수만 사용하기 때문에 `𝘺`는 `0` 이상 `√(𝘱)` 미만의 값 중 정수로 떨어지는 어떤 값임을 알 수 있습니다. ECDSA 방정식 그래프는 아래와 같이 그려지는데, 그래프 곡선 상의 몇몇 지점들이 특별한 상관관계를 갖는 것을 확인할 수 있습니다. 왼쪽 타원에서 `P`와 `Q`를 이어서 만든 선이 오른쪽 곡선과 교차하는 지점 `R`의 𝒚축 값은 `P`와 `Q`의 𝒙축 값을 더한 값에 -1을 곱한 값(𝒙축 기준 대칭 지점)과 같습니다.
+
+<img src="./ecdsa.webp" width="700" />
+
+<br />
+
+### 2-5. Key Generation
 
 [`accounts/keystore`](https://github.com/ethereum/go-ethereum/blob/da16d089c09dfbe5497862496c6f34d32ba6bd0e/accounts/keystore/keystore.go) 패키지는 계정 키가 저장되는 디렉토리를 관리하는 패키지입니다. `NewAccount(passphrase)` 함수 구현 부분을 보면, 암호화에 사용할 임의의 키 값 `passphrase`를 파라미터로 받은 후 `storeNewKey(storage, reader, passphrase)` 함수를 호출할 때 사용합니다. `storeNewKey` 함수는 개인 키를 생성한 후, 이 키 값에 기반한 계정까지 모두 생성하여 `key, account, err`를 반환합니다.
 
@@ -197,52 +235,6 @@ func newKeyFromECDSA(privateKeyECDSA *ecdsa.PrivateKey) *Key {
 		PrivateKey: privateKeyECDSA,
 	}
 	return key
-}
-```
-
-<br />
-
-### 2-5. State
-
-이더리움에서 어떤 계정에 접근하여 상태를 변경하려면 `stateObject` `struct`를 통해 접근한 후 변경해야 합니다. 이 `struct`의 `db` 필드에는 해당 계정의 상태를 저장할 DBMS에 대한 포인터를 저장합니다. 계정 상태에 변경이 발생하면 `CommitTrie(db)` 함수를 호출하여 변경된 Trie 데이터를 [LevelDB](https://github.com/google/leveldb)에 업데이트합니다.
-
-```go
-// core/state/state_object.go
-
-// stateObject represents an Ethereum account which is being modified.
-//
-// The usage pattern is as follows:
-// First you need to obtain a state object.
-// Account values can be accessed and modified through the object.
-// Finally, call CommitTrie to write the modified storage trie into a database.
-type stateObject struct {
-	address  common.Address
-	addrHash common.Hash // hash of ethereum address of the account
-	data     types.StateAccount
-	db       *StateDB
-
-	// DB error.
-	// State objects are used by the consensus core and VM which are
-	// unable to deal with database-level errors. Any error that occurs
-	// during a database read is memoized here and will eventually be returned
-	// by StateDB.Commit.
-	dbErr error
-
-	// Write caches.
-	trie Trie // storage trie, which becomes non-nil on first access
-	code Code // contract bytecode, which gets set when code is loaded
-
-	originStorage  Storage // Storage cache of original entries to dedup rewrites, reset for every transaction
-	pendingStorage Storage // Storage entries that need to be flushed to disk, at the end of an entire block
-	dirtyStorage   Storage // Storage entries that have been modified in the current transaction execution
-	fakeStorage    Storage // Fake storage which constructed by caller for debugging purpose.
-
-	// Cache flags.
-	// When an object is marked suicided it will be delete from the trie
-	// during the "update" phase of the state transition.
-	dirtyCode bool // true if the code was updated
-	suicided  bool
-	deleted   bool
 }
 ```
 
@@ -318,6 +310,52 @@ Gas 비용은 Ethereum 네트워크를 보호하기 위해 고안된 방법인�
 ## 5. JSON-RPC API
 
 DApp에서 Ethereum 블록체인 상의 데이터를 읽거나, Transaction을 처리하려면 Ethereum 노드에 연결해야 합니다. Ethereum 노드라는 것은 [Ethereum Client](https://ethereum.org/en/developers/docs/nodes-and-clients/#execution-clients)를 실행중인 컴퓨터인데, Ethereum의 구현제인 Ethereum Client를 실행하는 노드들이 모여 분산된 Ethereum 블록체인을 구성하는 것이죠. 모든 Ethereum Client는 [JSON-RPC](https://ethereum.org/en/developers/docs/apis/json-rpc/) 명세를 따르는 엔드포인트 구현체를 갖고있는데, 이를 통해 외부에서 Ethereum Client를 실행하고 있는 Ethereum 노드들에 연결할 수 있습니다. 웹 프론트엔드에서 Ethereum 노드에 직접 연결할 때는 보통 JavaScript 라이브러리를 사용하는데 [`ethers`](https://docs.ethers.io/v5/), [`web3`](https://web3js.readthedocs.io/en/v1.7.0/)가 대표적입니다. 이 라이브러리들은 지갑 생성, 토큰 전송, 서명 등 기본적인 거의 모든 기능을 지원하고요, [ABI](https://docs.soliditylang.org/en/v0.5.3/abi-spec.html) 포맷의 컴파일 된 Contract를 읽는 방식으로 Contract 함수를 직접 호출할 수도 있습니다.
+
+<br />
+
+## 6. State
+
+이더리움에서 어떤 계정에 접근하여 상태를 변경하려면 `stateObject` `struct`를 통해 접근한 후 변경해야 합니다. 이 `struct`의 `db` 필드에는 해당 계정의 상태를 저장할 DBMS에 대한 포인터를 저장합니다. 계정 상태에 변경이 발생하면 `CommitTrie(db)` 함수를 호출하여 변경된 Trie 데이터를 [LevelDB](https://github.com/google/leveldb)에 업데이트합니다.
+
+```go
+// core/state/state_object.go
+
+// stateObject represents an Ethereum account which is being modified.
+//
+// The usage pattern is as follows:
+// First you need to obtain a state object.
+// Account values can be accessed and modified through the object.
+// Finally, call CommitTrie to write the modified storage trie into a database.
+type stateObject struct {
+	address  common.Address
+	addrHash common.Hash // hash of ethereum address of the account
+	data     types.StateAccount
+	db       *StateDB
+
+	// DB error.
+	// State objects are used by the consensus core and VM which are
+	// unable to deal with database-level errors. Any error that occurs
+	// during a database read is memoized here and will eventually be returned
+	// by StateDB.Commit.
+	dbErr error
+
+	// Write caches.
+	trie Trie // storage trie, which becomes non-nil on first access
+	code Code // contract bytecode, which gets set when code is loaded
+
+	originStorage  Storage // Storage cache of original entries to dedup rewrites, reset for every transaction
+	pendingStorage Storage // Storage entries that need to be flushed to disk, at the end of an entire block
+	dirtyStorage   Storage // Storage entries that have been modified in the current transaction execution
+	fakeStorage    Storage // Fake storage which constructed by caller for debugging purpose.
+
+	// Cache flags.
+	// When an object is marked suicided it will be delete from the trie
+	// during the "update" phase of the state transition.
+	dirtyCode bool // true if the code was updated
+	suicided  bool
+	deleted   bool
+}
+```
 
 <br />
 
