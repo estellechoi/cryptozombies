@@ -156,9 +156,13 @@ ECDSA를 일반적인 [AES](https://en.wikipedia.org/wiki/Advanced_Encryption_St
 
 <br />
 
-ECDSA는 디지털 서명을 만들 때 160bits Hash(Message Digest)를 생성하는 [SHA1 Hash 알고리즘](https://en.wikipedia.org/wiki/SHA-1)을 사용합니다. SHA1은 데이터 Encrypt 관점에서는 Deprecated 되었지만, 데이터가 변경되지 않았음을 식별하는데는 여전히 사용됩니다. 디지털 서명은 해당 Transaction 정보를 담고있는 텍스트 데이터를 Hashing한 값과 개인 키 등을 조합해서 만든다는 것을 짚고 넘어가겠습니다. 컴퓨터에서 하나의 텍스트 파일은 최종적으로 연속된 byte(= 8bits)의 집합으로 해석되는데, 각각의 byte는 0 ~ 255 사이의 십진수 숫자로 나타낼 수 있습니다. 8bits가 256(2⁸)가지 수를 나타낼 수 있기 때문이죠. 이 byte 덩어리들은 코드상에서는 [Hex](https://en.wikipedia.org/wiki/Hexadecimal) 값으로 계산됩니다. SHA1 Hash 알고리즘은 데이터 파일을 Hashing할 때 각 byte가 나타내는 Hex 값들을 모두 더한 후 매우 복잡한 Modulus를 사용하여 160bits 고정 길이의 최종 Hex 값을 반환합니다.
+ECDSA는 디지털 서명을 만들 때 160bits Hash(Message Digest)를 생성하는 [SHA1 Hash 알고리즘](https://en.wikipedia.org/wiki/SHA-1)을 사용합니다. SHA1은 데이터 Encrypt 관점에서는 Deprecated 되었지만, 데이터가 변경되지 않았음을 식별하는데는 여전히 사용됩니다.
 
 > Revision control systems such as Git, Mercurial, and Monotone use SHA-1, not for security, but to identify revisions and to ensure that the data has not changed due to accidental corruption. Linus Torvalds said about Git - [SHA-1 | Wikipedia](https://en.wikipedia.org/wiki/SHA-1)
+
+<br />
+
+디지털 서명은 해당 Transaction 정보를 담고있는 텍스트 데이터를 Hashing한 값과 개인 키 등을 조합해서 만든다는 것을 짚고 넘어가겠습니다. 컴퓨터에서 하나의 텍스트 파일은 최종적으로 연속된 byte(= 8bits)의 집합으로 해석되는데, 각각의 byte는 0 ~ 255 사이의 십진수 숫자로 나타낼 수 있습니다. 8bits가 256(2⁸)가지 수를 나타낼 수 있기 때문이죠. 이 byte 덩어리들은 코드상에서는 [Hex](https://en.wikipedia.org/wiki/Hexadecimal) 값으로 계산됩니다. SHA1 Hash 알고리즘은 데이터 파일을 Hashing할 때 각 byte가 나타내는 Hex 값들을 모두 더한 후 매우 복잡한 Modulus를 사용하여 160bits 고정 길이의 최종 Hex 값을 반환합니다.
 
 <br />
 
@@ -197,7 +201,7 @@ ECDSA 방식을 완전히 이해하려면 수학적으로 더 깊게 들어가�
 
 ### 2-5. Key Generation
 
-[`accounts/keystore`](https://github.com/ethereum/go-ethereum/blob/da16d089c09dfbe5497862496c6f34d32ba6bd0e/accounts/keystore/keystore.go) 패키지는 계정 키가 저장되는 디렉토리를 관리하는 패키지입니다. `NewAccount(passphrase)` 함수 구현 부분을 보면, 암호화에 사용할 임의의 키 값 `passphrase`를 파라미터로 받은 후 `storeNewKey(storage, reader, passphrase)` 함수를 호출할 때 사용합니다. `storeNewKey` 함수는 개인 키를 생성한 후, 이 키 값에 기반한 계정까지 모두 생성하여 `key, account, err`를 반환합니다.
+Ethereum의 [`accounts/keystore`](https://github.com/ethereum/go-ethereum/blob/da16d089c09dfbe5497862496c6f34d32ba6bd0e/accounts/keystore/keystore.go) 패키지는 계정 키가 저장되는 디렉토리를 관리하는 패키지입니다. `NewAccount(passphrase)` 함수 구현 부분을 보면, 키 생성에 사용할 임의의 문자열 `passphrase`를 파라미터로 받은 후 `storeNewKey(storage, reader, passphrase)` 함수를 호출할 때 넘겨줍니다. `storeNewKey` 함수는 개인 키를 생성한 후, 이 키 값에 기반한 공개 키와 계정 `struct`까지 모두 생성하여 `key, account, err`를 반환합니다.
 
 ```go
 // accounts/keystore/keystore.go
@@ -245,7 +249,19 @@ func storeNewKey(ks keyStore, rand io.Reader, auth string) (*Key, accounts.Accou
 
 <br />
 
-`newKey(rand)` 함수는 생성한 키 정보들을 `Key` `struct`에 담아 포인터를 반환합니다. 코드는 [`newKeyFromECDSA(*ecdsa.PrivateKey)`](https://github.com/ethereum/go-ethereum/blob/da16d089c09dfbe5497862496c6f34d32ba6bd0e/accounts/keystore/key.go#L133)에서 확인할 수 있습니다.
+`newKey(rand)` 함수는 Go의 기본 라이브러리인 [`crypto/ecdsa`](https://pkg.go.dev/crypto/ecdsa) 패키지의 함수를 사용해서 개인 키와 공개 키를 생성하고, 생성한 키 정보들과 계정 주소를 `Key` `struct`에 담아 포인터를 반환합니다. 코드는 [`accounts/keystore/key.go`](https://github.com/ethereum/go-ethereum/blob/da16d089c09dfbe5497862496c6f34d32ba6bd0e/accounts/keystore/key.go#L133)에서 확인할 수 있습니다.
+
+```go
+// accounts/keystore/key.go
+
+func newKey(rand io.Reader) (*Key, error) {
+	privateKeyECDSA, err := ecdsa.GenerateKey(crypto.S256(), rand) // ECDSA를 사용해서 개인 키 생성
+	if err != nil {
+		return nil, err
+	}
+	return newKeyFromECDSA(privateKeyECDSA), nil
+}
+```
 
 ```go
 // accounts/keystore/key.go
