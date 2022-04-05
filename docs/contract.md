@@ -106,7 +106,7 @@ type StateAccount struct {
 
 - `CodeHash`: Contract byte 코드의 Hash 값으로 이 Hash를 사용해서 코드를 찾을 수 있음, Externally-owned 계정의 `codeHash`는 빈 String의 Hash 값
 
-- `Root`: 계정의 상태 정보가 저장될 Storage 트리의 루트 노드를 256bit Hashing한 값
+- `Root`: 계정의 상태 정보가 저장될 Storage 트리의 루트 노드를 256bits 값으로 Hashing한 값
 
 <br />
 
@@ -124,52 +124,74 @@ type StateAccount struct {
 
 ### 2-3. Address
 
-모든 이더리움의 계정은 개인 키(Private Key)와 공개 키(Public Key)의 쌍으로 정의되는데, 개인 키를 비대칭 암호화해서 공개 키를 생성하기 때문에 이 두 키를 비대칭 키(Asymmetric Key)라고 부릅니다. 개인 키로는 공개 키를 얻어낼 수 있지만, 공개 키로는 개인 키를 알 수 없기 때문에 "비대칭" 암호화라고 말합니다. 이더리움에서는 비대칭 암호화 알고리즘으로 비트코인의 [ECDSA(Elliptic Curve Digital Signature Algorithm)](https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm) 라이브러리인 [`secp256k1`](https://github.com/bitcoin-core/secp256k1/blob/master/src/secp256k1.c)을 사용하는데, 비트코인의 라이브러리는 C언어로 작성되어있기 때문에 Go로 래핑하여 사용합니다.
+모든 이더리움의 계정은 개인 키(Private Key)와 공개 키(Public Key)의 쌍으로 정의되는데, 개인 키를 비대칭 암호화해서 공개 키를 생성하기 때문에 이 두 키를 비대칭 키(Asymmetric Key)라고 부릅니다. 개인 키로는 공개 키를 얻어낼 수 있지만, 공개 키로는 개인 키를 알 수 없기 때문에 "비대칭" 암호화라고 말합니다. 이더리움에서는 비대칭 암호화 알고리즘으로 비트코인의 [타원곡선 디지털 서명 알고리즘(ECDSA, Elliptic Curve Digital Signature Algorithm)](https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm) 라이브러리인 [`secp256k1`](https://github.com/bitcoin-core/secp256k1/blob/master/src/secp256k1.c)을 사용하는데, 비트코인의 라이브러리는 C언어로 작성되어있기 때문에 Go로 래핑하여 사용합니다.
 
-- Externally-owned Account: 임의의 32bytes 개인 키를 ECDSA에 통과시켜 256bit 공개 키를 생성하고, 이 공개 키를 Keccak256 Hash 함수에 통과시켜 32bytes 값을 얻어낸 후 이중 마지막 20bytes를 절삭하여 계정 주소로 사용함, 개인 키는 길이가 64인 Hex 문자열로 보통 라이브러리를 사용하여 랜덤 생성함
+- Externally-owned Account: 임의의 개인 키를 ECDSA에 통과시켜 공개 키를 생성하고, 이 공개 키를 Keccak256 Hash 함수에 통과시켜 32bytes 값을 얻어낸 후 마지막 20bytes를 절삭하여 계정 주소로 사용함, 개인 키는 길이가 64인 Hex 문자열로 보통 라이브러리를 사용하여 랜덤 생성함
 - Contract Account: Contract 배포자의 주소와 `nonce` 값으로 주소가 만들어짐
 
 <br />
 
 ### 2-4. ECDSA
 
-ECDSA를 일반적인 [AES]() 암호화와 혼동해서는 안됩니다. 보통 어떤 데이터를 암호화했다고하면 그 내용을 알 수 없도록 Encrypt 하는 것을 말하지만, ECDSA는 데이터를 숨기는 것이 아니라 해당 데이터가 외부의 간섭을 받지 않았다는 사실을 보장하는 역할을 하는 알고리즘입니다. 이더리움에서는 어떤 Transaction이 다른 누구도 아닌 해당 계정의 소유자에 의해 만들어졌음을 보장하기 위해 Transaction을 전송할 때 개인 키를 사용해서 디지털 서명을 하는데, 이 디지털 서명을 검증할 때는 개인 키가 아닌 공개 키가 사용됩니다. 개인 키는 비밀이라 접근할 수 없으니까요! 이때 사용되는 공개 키를 처음 생성할 때 ECDSA가 사용됩니다.
+ECDSA를 일반적인 [AES](https://en.wikipedia.org/wiki/Advanced_Encryption_Standard) 암호화와 혼동해서는 안됩니다. 보통 어떤 데이터를 암호화했다고하면 그 내용을 알 수 없도록 Encrypt 하는 것을 말하지만, ECDSA는 데이터를 숨기는 것이 아니라 해당 데이터가 외부의 간섭을 받지 않았다는 사실을 보장하는 역할을 하는 알고리즘입니다. 이더리움에서는 어떤 Transaction이 다른 누구도 아닌 해당 계정의 소유자에 의해 만들어졌음을 보장하기 위해 Transaction을 전송할 때 개인 키를 사용해서 디지털 서명을 하는데, 이 디지털 서명을 검증할 때는 개인 키가 아닌 공개 키가 사용됩니다. 개인 키는 비밀이라 접근할 수 없으니까요! 이때 사용되는 공개 키를 처음 생성할 때 ECDSA가 사용되며, 디지털 서명을 생성할 때도 ECDSA가 사용됩니다.
 
 > You shouldn't confuse ECDSA with AES (Advanced Encryption Standard) which is to encrypt the data. ECDSA does not encrypt or prevent someone from seeing or accessing your data, what it protects against though is making sure that the data was not tampered with. - [Understanding How ECDSA Protects Your Data](https://www.instructables.com/Understanding-how-ECDSA-protects-your-data/#step1)
 
 <br />
 
-ECDSA의 동작 방식을 간단히 설명하면 이렇습니다.
+디지털 서명을 검증하는 방식을 간단히 설명하면 이렇습니다.
 
 - 개인 키를 생성한다. 개인 키는 자신 외에 그 누구도 알 수 없는 비밀 키이다
 - ECDSA 곡선 그래프를 이루는 방정식에 개인 키를 대입해서 공개 키를 생성한다
+- 공개 키를 역추적해서 개인 키를 알 수 있는 방법은 없다
 - 이제 이 공개 키를 사용해서 누구나 내가 만든 디지털 서명이 유효한지 검사할 수 있다
 - 디지털 서명은 Transaction을 전송할 때마다 만드는데, 개인 키와 데이터 파일의 Hash 값을 사용해서 디지털 서명을 생성한다
+- 디지털 서명을 만들 때도 ECDSA가 사용된다
 - 이 디지털 서명은 비밀 키를 사용해서 만들지만, 누구나 공개 키만을 사용해서 이 디지털 서명이 유효한지 검사할 수 있다
 - 다시 말해, 개인 키 소유자가 아니면 개인 키를 알지 못하기 때문에 그 누구도 서명을 위조할 수는 없지만, 누구나 공개 키를 사용해서 해당 서명이 유효한지 확인할 수는 있다
-- 공개 키를 역추적해서 개인 키를 알 수 없는데, 어떻게 서명을 검증할 수 있을까?
+- 개인 키를 알 수 없는데, 어떻게 서명을 검증할 수 있을까?
 - 개인 키를 사용해서 만든 디지털 서명은 두 개의 파트 R과 S로 이루어진다
-- 공개 키와 S를 또 하나의 마법 방정식에 넣었을 때 그 결과가 R과 같으면 해당 서명은 유효하다고 확언할 수 있다
+- 공개 키와 S를 마법 방정식에 넣었을 때 그 결과가 R과 같으면 해당 서명은 유효하다
 - 이는 수학적으로 증명되었기 때문이다
 
 <br />
 
-이제 ECDSA의 수학적 배경을 조금 더 살펴보겠습니다.
+ECDSA는 디지털 서명을 만들 때 160bits Hash(Message Digest)를 생성하는 [SHA1 Hash 알고리즘](https://en.wikipedia.org/wiki/SHA-1)을 사용합니다. SHA1은 데이터 Encrypt 관점에서는 Deprecated 되었지만, 데이터가 변경되지 않았음을 식별하는데는 여전히 사용됩니다. 디지털 서명은 해당 Transaction 정보를 담고있는 텍스트 데이터를 Hashing한 값과 개인 키 등을 조합해서 만든다는 것을 짚고 넘어가겠습니다. 컴퓨터에서 하나의 텍스트 파일은 최종적으로 연속된 byte(= 8bits)의 집합으로 해석되는데, 각각의 byte는 0 ~ 255 사이의 십진수 숫자로 나타낼 수 있습니다. 8bits가 256(2⁸)가지 수를 나타낼 수 있기 때문이죠. 이 byte 덩어리들은 코드상에서는 [Hex](https://en.wikipedia.org/wiki/Hexadecimal) 값으로 계산됩니다. SHA1 Hash 알고리즘은 데이터 파일을 Hashing할 때 각 byte가 나타내는 Hex 값들을 모두 더한 후 매우 복잡한 Modulus를 사용하여 160bits 고정 길이의 최종 Hex 값을 반환합니다.
 
-- 정수만 사용
-- Modulus(나머지 연산)
-
-<br />
-
-ECDSA는 특정 범위 내의 정수만 사용하는 것이 특징인데, 해당 범위는 디지털 서명을 만들 때 몇 bit를 사용할 것인지에 따라 결정됩니다. 보통 디지털 서명에는 160bits를 사용하는데, 160bits는 2¹⁶⁰ 가지 수를 표현할 수 있기 때문에 사용하는 숫자의 범위는 0 부터 2¹⁶⁰ - 1 이 되고, 최대 49자릿수의 숫자까지 포함할 수 있게 됩니다. ECDSA는 20bytes(= 160bits) Hash를 생성하는 [SHA1 Hash 알고리즘](https://en.wikipedia.org/wiki/Cryptographic_hash_function)을 사용합니다. 컴퓨터에서 하나의 텍스트 파일은 최종적으로 연속된 byte(= 8bits)의 집합으로 해석되는데, 각각의 byte는 0 ~ 255 사이의 십진수 숫자로 나타낼 수 있습니다. 8bits가 256(2⁸)가지 수를 나타낼 수 있기 때문입니다. SHA1 Hash 알고리즘은 데이터 파일을 Hashing할 때 각 byte가 나타내는 십진수 숫자들을 모두 더한 후 매우 복잡한 Modulus를 사용하여 고정된 길이의 숫자를 얻습니다.
-
-ECDSA 그래프를 이루는 방정식은 이렇습니다:_`𝘺² = (𝘹³ + 𝘢𝘹 + 𝘣) 𝗆𝗈𝖽 𝘱`_. 방정식에서 Modulus를 사용하고있기 때문에 `𝘺²`의 값은 `𝘱`보다 작은 숫자임을 알 수 있고요, ECDSA에서는 정수만 사용하기 때문에 `𝘺`는 `0` 이상 `√(𝘱)` 미만의 값 중 정수로 떨어지는 어떤 값임을 알 수 있습니다. ECDSA 방정식 그래프는 아래와 같이 그려지는데, 그래프 곡선 상의 몇몇 지점들이 특별한 상관관계를 갖는 것을 확인할 수 있습니다. 왼쪽 타원에서 `P`와 `Q`를 이어서 만든 선이 오른쪽 곡선과 교차하는 지점 `R`의 𝒚축 값은 `P`와 `Q`의 𝒙축 값을 더한 값에 -1을 곱한 값(𝒙축 기준 대칭 지점)과 같습니다. ECDSA 방식을 완전히 이해하려면 수학적으로 더 깊게 들어가야하지만, 곡선상에 위치한 몇몇 정수 지점들의 특별한 상관 관계를 사용해서 공개 키로 디지털 서명을 검증하는구나 라고 간단히 정리해볼 수 있겠습니다.
-
-<img src="./ecdsa.webp" width="700" />
+> Revision control systems such as Git, Mercurial, and Monotone use SHA-1, not for security, but to identify revisions and to ensure that the data has not changed due to accidental corruption. Linus Torvalds said about Git - [SHA-1 | Wikipedia](https://en.wikipedia.org/wiki/SHA-1)
 
 <br />
 
-[Understanding How ECDSA Protects Your Data](https://www.instructables.com/Understanding-how-ECDSA-protects-your-data/)에서 ECDSA를 더 자세하게 공부하실 수 있습니다.
+#### Point Addition
+
+이제 ECDSA의 수학적 배경을 살펴보겠습니다. ECDSA는 다음 방정식에 기반합니다:_`𝘺² = (𝘹³ + 𝘈𝘹 + 𝘉) 𝗆𝗈𝖽 𝘗`_
+
+방정식에서 `𝘺²`은 어떤 값을 `𝘱`로 나눈 나머지 값이므로, 항상 `𝘱` 보다 작다는 것을 알 수 있고요, ECDSA에서는 정수만 사용하기 때문에 `𝘺`는 `0` 이상 `√𝘱` 미만의 값 중 정수로 떨어지는 어떤 값임을 알 수 있습니다. 자, 여기에서 사용된 ECDSA의 두 가지 기본 사항을 기억해야 합니다.
+
+- 정수만 사용: ECDSA가 기반하는 방정식의 변수들에 대입 가능한 값은 특정 범위 내의 정수로 제한되는 것이 특징인데, 해당 범위는 공개 키나 디지털 서명을 만들 때 몇 bit를 사용할 것인지에 따라 결정됨
+- Modulus(나머지 연산): 방정식에서 Modulus를 사용하기 때문에 `𝘺`는 항상 고정 범위 내의 값임
+
+<br />
+
+Modulus를 제거한 `𝘺² = 𝘹³ + 𝘈𝘹 + 𝘉` 방정식의 그래프는 아래와 같은 형태들로 그려지고요,
+
+<img src="./ecdsa1.png" width="350" />
+
+<br />
+
+아래에서 그래프 곡선 상의 몇몇 지점들이 특별한 상관관계를 갖는 것을 확인할 수 있습니다.
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/ECClines.svg" width="680" />
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/ECClines-2.svg/1000px-ECClines-2.svg.png" width="680" />
+
+<br />
+
+여기에서 [Point Addition](https://en.wikipedia.org/wiki/Elliptic_curve_point_multiplication#Point_addition) 개념을 확인할 수 있습니다. 가령 가장 왼쪽 그림에서, 왼쪽 타원 부분의 `P`와 `Q`를 이어서 만든 선이 오른쪽 곡선과 교차하는 지점 `R`을 구할 수 있는데, `P + Q + R = 0`을 만족하는 `P`, `Q`, `R`의 값을 키 생성이나 디지털 서명에 사용하여 개인 키를 역추적할 필요없이 해당 방정식이 성립하는 것을 검증할 수 있다는 아이디어입니다.
+
+<br />
+
+ECDSA 방식을 완전히 이해하려면 수학적으로 더 깊게 들어가야하지만, 곡선상에 위치한 몇몇 정수 지점들의 특별한 상관 관계를 사용해서 개인 키를 알 필요없이 디지털 서명을 검증하는구나 라고 간단히 정리해볼 수 있겠습니다. [Addition on Elliptic Curves](https://codegolf.stackexchange.com/questions/75786/addition-on-elliptic-curves)에서 `P`, `Q` 값을 수학적으로 구하는 방법을 더 알아보실 수 있고, [Understanding How ECDSA Protects Your Data](https://www.instructables.com/Understanding-how-ECDSA-protects-your-data/)에서 ECDSA를 더 자세하게 공부하실 수 있습니다.
 
 <br />
 
