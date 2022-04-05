@@ -3,10 +3,12 @@
 <br />
 
 1. Contract, Immutability & Composability
-2. Account, Balance in wei, Address, Key Generation, State
+2. Account, Balance in wei, Address, ECDSA, Key Generation
 3. Gas fee in gwei, Why needed
 4. Finality: in PoW, in PoS
 5. JSON-RPC API
+6. Transaction
+7. Receipt
 
 <br />
 
@@ -355,47 +357,116 @@ DApp에서 Ethereum 블록체인 상의 데이터를 읽거나, Transaction을 �
 
 <br />
 
-## 6. State
+## 6. Transaction
 
-이더리움에서 어떤 계정에 접근하여 상태를 변경하려면 `stateObject` `struct`를 통해 접근한 후 변경해야 합니다. 이 `struct`의 `db` 필드에는 해당 계정의 상태를 저장할 DBMS에 대한 포인터를 저장합니다. 계정 상태에 변경이 발생하면 `CommitTrie(db)` 함수를 호출하여 변경된 Trie 데이터를 [LevelDB](https://github.com/google/leveldb)에 업데이트합니다.
+이더리움에서 Transaction은 한 계정에서 다른 계정으로 Ether를 전송하거나, Contract의 특정 함수를 호출할 때 발생합니다. 모든 Transaction은 디지털 서명을 통해 암호화되는데, 디지털 서명은 Transaction 정보를 담은 데이터 `struct`와 개인 키 등으로 만들어지고, ECDSA를 사용하여 암호화됩니다. [`core/types/transaction.go`](https://github.com/ethereum/go-ethereum/blob/da16d089c09dfbe5497862496c6f34d32ba6bd0e/core/types/transaction.go)에서 다음과 같이 `Transaction` `struct`를 확인할 수 있고요, `hash` 필드가 해당 Transaction을 Hashing한 값에 해당합니다.
 
 ```go
-// core/state/state_object.go
+// core/types/transaction.go
 
-// stateObject represents an Ethereum account which is being modified.
+// Transaction is an Ethereum transaction.
+type Transaction struct {
+	inner TxData    // Consensus contents of a transaction
+	time  time.Time // Time first seen locally (spam avoidance)
+
+	// caches
+	hash atomic.Value
+	size atomic.Value
+	from atomic.Value
+}
+```
+
+<br />
+
+`TxData` 타입의 `inner` 필드는 Gas비를 비롯한 Transaction 정보를 담는 용도인데, 다음과 같이 `interface`로 정의되어 있고, 함수를 호출해서 값을 반환받도록 되어있습니다.
+
+```go
+// TxData is the underlying data of a transaction.
 //
-// The usage pattern is as follows:
-// First you need to obtain a state object.
-// Account values can be accessed and modified through the object.
-// Finally, call CommitTrie to write the modified storage trie into a database.
-type stateObject struct {
-	address  common.Address
-	addrHash common.Hash // hash of ethereum address of the account
-	data     types.StateAccount
-	db       *StateDB
+// This is implemented by DynamicFeeTx, LegacyTx and AccessListTx.
+type TxData interface {
+	txType() byte // returns the type ID
+	copy() TxData // creates a deep copy and initializes all fields
 
-	// DB error.
-	// State objects are used by the consensus core and VM which are
-	// unable to deal with database-level errors. Any error that occurs
-	// during a database read is memoized here and will eventually be returned
-	// by StateDB.Commit.
-	dbErr error
+	chainID() *big.Int
+	accessList() AccessList
+	data() []byte
+	gas() uint64
+	gasPrice() *big.Int
+	gasTipCap() *big.Int
+	gasFeeCap() *big.Int
+	value() *big.Int
+	nonce() uint64
+	to() *common.Address
 
-	// Write caches.
-	trie Trie // storage trie, which becomes non-nil on first access
-	code Code // contract bytecode, which gets set when code is loaded
+	rawSignatureValues() (v, r, s *big.Int) // v, r, s → ECDSA 디지털 서명을 만들 때 사용되는 값들
+	setSignatureValues(chainID, v, r, s *big.Int)
+}
+```
 
-	originStorage  Storage // Storage cache of original entries to dedup rewrites, reset for every transaction
-	pendingStorage Storage // Storage entries that need to be flushed to disk, at the end of an entire block
-	dirtyStorage   Storage // Storage entries that have been modified in the current transaction execution
-	fakeStorage    Storage // Fake storage which constructed by caller for debugging purpose.
+<br />
 
-	// Cache flags.
-	// When an object is marked suicided it will be delete from the trie
-	// during the "update" phase of the state transition.
-	dirtyCode bool // true if the code was updated
-	suicided  bool
-	deleted   bool
+이 `interface`를 구현한 패키지 중 하나인 [`dynamic_fee_tx.go`](https://github.com/ethereum/go-ethereum/blob/da16d089c09dfbe5497862496c6f34d32ba6bd0e/core/types/dynamic_fee_tx.go)를 보면, 다음과 같은 `struct`의 각 필드 값들을 반환하고 있음을 확인할 수 있습니다.
+
+```go
+// core/types/dynamic_fee_tx.go
+
+type DynamicFeeTx struct {
+	ChainID    *big.Int
+	Nonce      uint64
+	GasTipCap  *big.Int // a.k.a. maxPriorityFeePerGas
+	GasFeeCap  *big.Int // a.k.a. maxFeePerGas
+	Gas        uint64
+	To         *common.Address `rlp:"nil"` // nil means contract creation
+	Value      *big.Int
+	Data       []byte
+	AccessList AccessList
+
+	// Signature values
+	V *big.Int `json:"v" gencodec:"required"`
+	R *big.Int `json:"r" gencodec:"required"`
+	S *big.Int `json:"s" gencodec:"required"`
+}
+```
+
+<br />
+
+## 7. Receipt
+
+이더리움은 모든 Transaction에 대한 로그를 `Receipt` `struct`를 사용해서 저장합니다. `Receipt`는 Transaction의 실행 과정에 대한 모든 기록을 저장하는데, 실행 환경과 검색을 위한 Indexing 등 블록 내에 정상적으로 저장된 Transaction에 대한 모든 정보들을 저장합니다. 각 필드는 다음 값들을 담는 용도입니다.
+
+- `PostState`: Transaction 처리 후의 상태 정보
+- `CumulativeGasUsed`: 해당 Transaction이 포함된 블록에서 사용한 누적 Gas 비용
+- `Bloom`: `Logs`에 저장된 로그 정보들을 빠르게 검색하는데 사용하기 위한 블룸 필터
+- `Logs`: Transaction 실행시 생성된 각종 로그들
+- `TxHash`: 해당 Transaction의 주소
+- `ContractAddress`: Contract에서 생성된 Transaction인 경우 해당 Contract 주소
+- `GasUsed`: 해당 Transaction 실행에 사용된 Gas 비용 (하나의 Transaction을 처리하는데 기본으로 21,000 Gas가 기본으로 소요됨)
+
+```go
+// core/types/receipt.go
+
+// Receipt represents the results of a transaction.
+type Receipt struct {
+	// Consensus fields: These fields are defined by the Yellow Paper
+	Type              uint8  `json:"type,omitempty"`
+	PostState         []byte `json:"root"`
+	Status            uint64 `json:"status"`
+	CumulativeGasUsed uint64 `json:"cumulativeGasUsed" gencodec:"required"`
+	Bloom             Bloom  `json:"logsBloom"         gencodec:"required"`
+	Logs              []*Log `json:"logs"              gencodec:"required"`
+
+	// Implementation fields: These fields are added by geth when processing a transaction.
+	// They are stored in the chain database.
+	TxHash          common.Hash    `json:"transactionHash" gencodec:"required"`
+	ContractAddress common.Address `json:"contractAddress"`
+	GasUsed         uint64         `json:"gasUsed" gencodec:"required"`
+
+	// Inclusion information: These fields provide information about the inclusion of the
+	// transaction corresponding to this receipt.
+	BlockHash        common.Hash `json:"blockHash,omitempty"`
+	BlockNumber      *big.Int    `json:"blockNumber,omitempty"`
+	TransactionIndex uint        `json:"transactionIndex"`
 }
 ```
 
