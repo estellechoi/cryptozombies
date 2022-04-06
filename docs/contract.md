@@ -4,7 +4,7 @@
 
 1. Contract, Immutability & Composability
 2. Account, Balance in wei, Address, ECDSA, Key Generation
-3. Gas fee in gwei, Why needed
+3. Fee per Gas in gwei, Gas Limit, Why needed
 4. Finality: in PoW, in PoS
 5. JSON-RPC API
 6. Transaction
@@ -126,7 +126,9 @@ type StateAccount struct {
 
 ### 2-3. Address
 
-모든 이더리움의 계정은 개인 키(Private Key)와 공개 키(Public Key)의 쌍으로 정의되는데, 개인 키를 비대칭 암호화해서 공개 키를 생성하기 때문에 이 두 키를 비대칭 키(Asymmetric Key)라고 부릅니다. 개인 키로는 공개 키를 얻어낼 수 있지만, 공개 키로는 개인 키를 알 수 없기 때문에 "비대칭" 암호화라고 말합니다. 이더리움에서는 비대칭 암호화 알고리즘으로 비트코인의 [타원곡선 디지털 서명 알고리즘(ECDSA, Elliptic Curve Digital Signature Algorithm)](https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm) 라이브러리인 [`secp256k1`](https://github.com/bitcoin-core/secp256k1/blob/master/src/secp256k1.c)을 사용하는데, 비트코인의 라이브러리는 C언어로 작성되어있기 때문에 Go로 래핑하여 사용합니다.
+모든 이더리움의 계정은 개인 키(Private Key)와 공개 키(Public Key)의 쌍으로 정의됩니다. 개인 키를 암호화해서 공개 키를 생성하는데, 암호화시에는 개인 키를 사용하고 복호화시에는 공개 키를 사용하기 때문에 이 두 키를 "비대칭" 키(Asymmetric Key)라고 부릅니다. 이는 전통적인 대칭 키 암호화와 다른 것인데, 대칭 키 암호화에는 하나의 비밀 키로 암호화와 복호화를 모두 하기 때문에 암호화와 복호화의 주체가 다른 경우 비밀 키를 안전하게 공유하기 어렵다는 보안상의 이슈가 있지요. 이더리움에서는 개인 키로 Transaction을 암호화하는 디지털 서명 방식을 사용하는데, 이 Transaction을 복호화하고 검증하는 주체는 채굴자들입니다. 채굴자들은 Transaction을 전달받으면, Transaction을 전송한 계정의 공개 키를 사용해서 디지털 서명의 유효성, 해당 계정의 Nonce 유효성 등을 검증합니다.
+
+이더리움에서는 비대칭 암호화 알고리즘으로 비트코인의 [타원곡선 디지털 서명 알고리즘(ECDSA, Elliptic Curve Digital Signature Algorithm)](https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm) 라이브러리인 [`secp256k1`](https://github.com/bitcoin-core/secp256k1/blob/master/src/secp256k1.c)을 사용하는데, 비트코인의 라이브러리는 C언어로 작성되어있기 때문에 Go로 래핑하여 사용합니다.
 
 - Externally-owned Account: 임의의 개인 키를 ECDSA에 통과시켜 공개 키를 생성하고, 이 공개 키를 Keccak256 Hash 함수에 통과시켜 32bytes 값을 얻어낸 후 마지막 20bytes를 절삭하여 계정 주소로 사용함, 개인 키는 길이가 64인 Hex 문자열로 보통 라이브러리를 사용하여 랜덤 생성함
 - Contract Account: Contract 배포자의 주소와 `nonce` 값으로 주소가 만들어짐
@@ -284,11 +286,11 @@ func newKeyFromECDSA(privateKeyECDSA *ecdsa.PrivateKey) *Key {
 
 <br />
 
-## 3. Gas fee in gwei, Why needed
+## 3. Fee per Gas in gwei, Gas Limit, Why needed
 
-### 3-1. Gas
+### 3-1. Gas Limit
 
-[Gas](https://ethereum.org/en/developers/docs/gas/)는 Contract의 런타임인 [EVM](https://ethereum.org/en/developers/docs/evm/)에서 Transaction을 처리할 때 소모되는 컴퓨팅 파워를 나타내는 단위입니다. [OPCODES FOR THE EVM](https://ethereum.org/en/developers/docs/evm/opcodes) 공식문서에서 연산별로 소모되는 Gas가 어느정도인지 확인할 수 있었습니다! 아무튼, 어떤 사람이 Transaction을 진행하려면 요구되는 연산량만큼의 수수료를 지불해야하는데, 이를 Gas비라고 하지요. [Etherscan](https://etherscan.io/gastracker)에서는 실시간 Gas비 추적과, Gas비에 따른 Transaction 처리 속도 예측을 제공합니다.
+[Gas](https://ethereum.org/en/developers/docs/gas/)는 Contract의 런타임인 [EVM](https://ethereum.org/en/developers/docs/evm/)에서 Transaction을 처리할 때 소모되는 컴퓨팅 파워를 나타내는 단위입니다. [OPCODES FOR THE EVM](https://ethereum.org/en/developers/docs/evm/opcodes) 공식문서에서 연산별로 소모되는 Gas가 어느정도인지 확인할 수 있었습니다! 아무튼, 어떤 사람이 Transaction을 진행하려면 요구되는 연산량만큼 Gas가 발생하고, 발생하는 Gas에 대해 수수료를 Ether로 지불해야하는데, 이를 흔히 Gas비라고 하지요. [Etherscan](https://etherscan.io/gastracker)에서는 실시간 Gas비 추적과, Gas비에 따른 Transaction 처리 속도 예측을 제공합니다.
 
 <br />
 
@@ -298,9 +300,13 @@ func newKeyFromECDSA(privateKeyECDSA *ecdsa.PrivateKey) *Key {
 
 <br />
 
-### 3-2. Gas fee in gwei
+> 특정 트랜젝션을 수행할 때 해당 작업에서 최대 몇 가스가 소요되는지에 대한 예상치가 가스 총량(Gas Limit)이다. 사용자가 임의로 추정하여 입력하는 값이다. - [코어 이더리움 프로그래밍](https://play.google.com/books/reader?id=WKLHDwAAQBAJ&pg=GBS.PA82&hl=ko&printsec=frontcover)
 
-Gas비는 다음과 같이 구성되고, 참고로 Gas비 계산에는 gwei(giga-wei)가 사용되는데, 1 gwei = 1000000000 wei = 0.000000001 ETH (10⁻⁹ ETH)입니다.
+<br />
+
+### 3-2. Fee per Gas in gwei (Gas Price)
+
+Gas Price는 다음과 같이 구성되고, 참고로 Gas Price 계산에는 gwei(giga-wei)가 사용되는데, 1 gwei = 1000000000 wei = 0.000000001 ETH (10⁻⁹ ETH)입니다.
 
 - `baseFeePerGas`: Contract 로직을 처리하기 위해 필요한 연산의 수(Gas)만큼 소각되는 Ether, 네트워크 수요에 따라 기본 Fee에 변동이 있음 (이전 블록의 사이즈가 다음 블록 Gas에 대한 Fee를 결정)
 - `maxPriorityFeePerGas`: Transaction Validator에게 팁으로 지불할 Gas당 Ether, 내 요청을 우선적으로 처리해주는 것에 대한 팁
@@ -309,7 +315,7 @@ Gas비는 다음과 같이 구성되고, 참고로 Gas비 계산에는 gwei(giga
 
 <br />
 
-보통 Ether를 전송하기만 하는 단순한 Transaction에는 21000 Gas가 소모되는데요, 만약 1 ETH를 전송하는데 `baseFeePerGas`가 190 gwei이고, `maxPriorityFeePerGas`로 10 gwei를 지불하겠다고 하면, 다음과 같이 총 Gas비를 계산할 수 있습니다: _(190 + 10) * 21000 = 4,200,000 gwei = 0.0042 ETH_. 따라서 1 ETH를 전송하려면 실제로는 총 1.0042 ETH를 사용해야 합니다.
+보통 Ether를 전송하기만 하는 단순한 Transaction에는 21,000 Gas가 소모되는데요, 만약 1 ETH를 전송하는데 `baseFeePerGas`가 190 gwei이고, `maxPriorityFeePerGas`로 10 gwei를 지불하겠다고 하면, 다음과 같이 총 Gas비를 계산할 수 있습니다: _(190 + 10) * 21,000 = 4,200,000 gwei = 0.0042 ETH_. 따라서 1 ETH를 전송하려면 실제로는 총 1.0042 ETH를 사용해야 합니다. 이때 지불할 것으로 추정되는 금액 0.0042 ETH가 바로 Max Transaction Fee입니다. 트랜젝션을 실행하려면 계정의 Ether 잔액이 Max Transaction Fee보다 많아야하는데, 이에 대한 확인 없이 Ether 잔액 부족한 상태로 Transation을 실행하는 경우, Transaction은 Revert 되지만 이미 소모된 Gas는 반환되지 않기 때문에 주의해야 합니다.
 
 <br />
 
@@ -321,7 +327,7 @@ Gas비는 다음과 같이 구성되고, 참고로 Gas비 계산에는 gwei(giga
 
 <br />
 
-### 3-3. Why needed
+### 3-4. Why needed
 
 Gas 비용은 Ethereum 네트워크를 보호하기 위해 고안된 방법인데, 불필요하고 무거운 연산을 요청하는 등의 방식으로 네트워크 운영을 방해하지 못하도록 요청하는 연산량만큼의 비용을 지불하도록 설계한 것입니다.
 
